@@ -1,0 +1,47 @@
+# Special
+
+packages/
+
+!kindlegen_win32_v2_7/*
+
+# Visual Studio Files
+*.obj
+*.pdb
+*.user
+*.aps
+*.pch
+*.vspscc
+*.vssscc
+*_i.c
+*_p.c
+*.ncb
+*.suo
+*.tlb
+*.tlh
+*.bak
+*.[Cc]ache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.scc
+[Bb]in
+[Dd]ebug*/
+obj/
+[Rr]elease*/
+_ReSharper*/
+[Tt]humbs.db
+[Tt]est[Rr]esult*
+[Bb]uild[Ll]og.*
+*.[Pp]ublish.xml
+*.resharper
+
+# For projects upgraded from VS2010
+[Bb]ackup/
+_UpgradeReport_Files/
+UpgradeLog.*
+
+*.opensdf
+*.sdf
+ipch/
+x64/

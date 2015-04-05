@@ -1,0 +1,12 @@
+﻿body, html {
+    padding: 5px;
+}
+
+li {
+    display: inline;
+    padding: 5px;
+}
+
+#data {
+    padding-top: 5px;
+}
