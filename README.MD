@@ -23,13 +23,13 @@ Note: This software is not intended for causing any harm to anything or anyone. 
 
 ## Configuration ##
 
-![Enable NuGet Package Restore]https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/01_04_EnableNuGetPackageRestore.PNG?raw=true
+![alt text](https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/01_04_EnableNuGetPackageRestore.PNG?raw=true "Enable NuGet Package Restore")
 
-![Configure NuGet Restore Packages]https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/02_04_ConfigureNuGetRestorePackages.PNG?raw=true
+![alt text](https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/02_04_ConfigureNuGetRestorePackages.PNG?raw=true "Configure NuGet Restore Packages")
 
-![Configuring NuGet Packages]https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/03_04_ConfiguringNuGetPackages.PNG?raw=true
+![alt text](https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/03_04_ConfiguringNuGetPackages.PNG?raw=true "Configuring NuGet Packages")
 
-![NuGet Package Finished]https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/04_04_NuGetPackageFinished.PNG?raw=true
+![alt text](https://raw.githubusercontent.com/bnji/RestlessHoneySeeker/master/Screenshots/04_04_NuGetPackageFinished.PNG?raw=true "NuGet Package Finished")
 
  ~~The software has solely been developed for educational purposes. The client is developed in Visual Studio using C# .NET. On the server side the software is built with PHP, jQuery, HTML & CSS. Note: this is a BETA version (some things might be broken or not yet work at all or as expected).
 The purpose of this software is to show how easy it is in reality for anyone to install a rootkit on Windows computer (with .NET 3.5 Client profile installed), which by the way would not be detected by any firewall or antivirus software, as it uses HTTP (port 80) to "phone home" to a central C&C (Command-and-Control) server, which controls the "infected" computer or computers.
