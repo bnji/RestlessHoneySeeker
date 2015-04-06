@@ -1,6 +1,8 @@
 ### PROJECT INFORMATION ###
 
-...
+The software has solely been developed for educational purposes. The client is developed in Visual Studio using C# .NET. On the server side the software is built with PHP, jQuery, HTML & CSS. Note: this is a BETA version (some things might be broken or not yet work at all or as expected).
+The purpose of this software is to show how easy it is in reality for anyone to install a rootkit on Windows computer (with .NET 3.5 Client profile installed), which by the way would not be detected by any firewall or antivirus software, as it uses HTTP (port 80) to "phone home" to a central C&C (Command-and-Control) server, which controls the "infected" computer or computers.
+The software will soon be released as open-source, so anyone who wants to build upon this is welcome to do so. Some 3rd party libraries have been used and will be disclosed in the README file when the project has been released. This software is not intended for causing any harm to anything or anyone.
 
 
 ### Resources & links ###
