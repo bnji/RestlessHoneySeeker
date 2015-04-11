@@ -20,6 +20,9 @@ namespace Library
         STOP_STREAM_DESKTOP,
         MOVE_CURSOR,
         DO_NOTHING,
-        SET_TRANSMISSION_INTERVAL
+        SET_TRANSMISSION_INTERVAL,
+        EXECUTE_PLUGIN,
+        KILL_PLUGIN,
+        UPLOAD_PLUGIN
     }
 }

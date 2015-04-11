@@ -275,6 +275,24 @@ namespace Library
             return content;
         }
 
+        public string UploadData(object data)
+        {
+            string content = String.Empty;
+            try
+            {
+                var request = new RestRequest("/values/UploadFile", Method.POST);
+                request.AddObject(new FileData()
+                {
+                    Data = Convert.ToBase64String(Encoding.Default.GetBytes(Convert.ToString(data))),
+                    FileNameWithExtension = "data.txt"
+                });
+                var response = client.Execute(request);
+                content = response.Content;
+            }
+            catch (Exception ex) { }
+            return content;
+        }
+
         //public bool RegisterWithServer()
         //{
         //    try
