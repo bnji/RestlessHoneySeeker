@@ -18,7 +18,7 @@ namespace Server.Controllers
 
         public ActionResult GetData()
         {
-            return Json(GetFileContents("DataFromClient", "data.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("DataFromClient", "data.dat"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetSentences()
@@ -61,5 +61,31 @@ namespace Server.Controllers
             // Some browsers send file names with full path. We only care about the file name.
             return Path.Combine(Server.MapPath("~/App_Data/" + path), Path.GetFileName(file));
         }
+
+        [HttpPost]
+        public ActionResult UploadFile()//IEnumerable<HttpPostedFileBase> files)
+        {
+            var file = HttpContext.Request.Files["UploadedFile"];
+            if (file != null)
+            {
+                file.SaveAs(GetFile("DataFromHost", Path.GetFileName(file.FileName)));
+                return Content("");
+            }
+            return Content("error");
+            //return SaveFile(files);
+        }
+
+        //private ActionResult SaveFile(IEnumerable<HttpPostedFileBase> files)
+        //{
+        //    // The Name of the Upload component is "files"
+        //    if (files != null)
+        //    {
+        //        foreach (var file in files)
+        //        {
+        //            file.SaveAs(GetFile("Data", Path.GetFileName(file.FileName)));
+        //        }
+        //    }
+        //    return Content("");
+        //}
     }
 }

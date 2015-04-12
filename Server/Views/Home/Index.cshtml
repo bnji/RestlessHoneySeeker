@@ -1,56 +1,63 @@
 ﻿@{
-    ViewBag.Title = "Home Page";
+    ViewBag.Title = "Restlesss Honey Seeker";
 }
-<form role="form" class="form-inline">
-    <div class="form-group">
-        <label for="computer">Computer</label>
-        <select id="computer" class="form-control"></select>
-    </div>
 
-    <div class="form-group">
-        <label for="command">Command</label>
-        <select id="command" class="form-control">
-            <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
-            <option value="@Library.ECommand.UPLOAD_IMAGE">Get image</option>
-            <option value="@Library.ECommand.UPLOAD_SENTENCES">Get sentences</option>
-            <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
-            <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
-            <option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>
-            <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
-            <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
-            <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
-            <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
-            <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
-            <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
-            <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
-            <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
-            <option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>
-        </select>
+<div class="row">
+    <div class="col-md-8">
+        <div class="form-group">
+            <label for="computer">Computer</label>
+            <select id="computer" class="form-control"></select>
+        </div>
     </div>
+</div>
+<div class="row">
+    <div class="col-md-10">
+        <form role="form" class="form-inline">
 
-    <div class="form-group">
-        <label for="FileName">File</label>
-        <input type="text" class="form-control" name="FileName" id="FileName" />
-        @*<span id="subCommand"></span>*@
-    </div>
-
-    <div class="form-group">
-        <label for="Parameters">Parameters</label>
-        <input type="text" class="form-control" name="Parameters" id="Parameters" />
-    </div>
-
-    @*<div class="form-group">
-            <input id="fileupload" type="file" name="files[]" multiple />
-            <div id="progress" class="progress">
-                <div class="progress-bar progress-bar-success"></div>
+            <div class="form-group">
+                <label for="command">Command</label>
+                <select id="command" class="form-control">
+                    <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
+                    <option value="@Library.ECommand.UPLOAD_IMAGE">Get image</option>
+                    <option value="@Library.ECommand.UPLOAD_SENTENCES">Get sentences</option>
+                    <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
+                    <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
+                    <option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>
+                    <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
+                    <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
+                    <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
+                    <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
+                    <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
+                    <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
+                    <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
+                    <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
+                    <option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>
+                </select>
             </div>
-            <div id="files" class="files"></div>
-        </div>*@
 
-    <div class="form-group">
-        <button type="submit" id="execute" class="btn btn-primary">Execute</button>
+            <div class="form-group">
+                <label for="FileName">File</label>
+                <input type="text" class="form-control" name="FileName" id="FileName" />
+                @*<span id="subCommand"></span>*@
+            </div>
+
+            <div class="form-group">
+                <label for="Parameters">Parameters</label>
+                <input type="text" class="form-control" name="Parameters" id="Parameters" />
+            </div>
+
+            <div class="form-group">
+                <button type="submit" id="execute" class="btn btn-primary">Execute</button>
+            </div>
+        </form>
     </div>
-</form>
+    <div class="col-md-2">
+        <form role="form" class="form-inline">
+            <input id="files" type="file" /><input type="button" id="btnUpload" value="Upload" class="btn btn-default" />
+        </form>
+
+    </div>
+</div>
 <div id="data"></div>
 <ul id="images"></ul>
 
@@ -74,7 +81,7 @@
             //    var img = $('<img />').attr('width', '100%').attr('src', image);
             //    $('#data').html(img);
             //});
-            
+
             //$.get('core/getlatestimage.inc.php')
             //    .done(function (imageUrl) {
             //        console.log(imageUrl);
@@ -222,6 +229,26 @@
         //});
     }
     $(function () {
+
+        $("#btnUpload").click(function (e) {
+            e.preventDefault();
+            var data = new FormData();
+            var files = $("#files").get(0).files;
+            if (files.length > 0) {
+                data.append("UploadedFile", files[0]);
+            }
+            var req = $.ajax({
+                type: 'POST',
+                url: '/Home/UploadFile',
+                contentType: false,
+                processData: false,
+                data: data
+            });
+            req.done(function (xhr, status) {
+                alert(status);
+            });s
+        });
+
         //editSettings('DO_NOTHING', imageQuality, "", "", fileToUpload, fileToDownload, cursorX, cursorY, "");
         //$().downloadFile('KeyLogTest.txt', 'KeyLogTest txt.exe', 'text/plain');
         //setInterval(function () {
@@ -264,6 +291,14 @@
         //    });
         //};
 
+        $('#command').change(function () {
+            var command = $(this).find(':selected').val();
+            switch (command) {
+                case '@Library.ECommand.DOWNLOAD_FILE':
+                    $("#FileName").val($("#files").val());
+                    break;
+            }
+        });
         //$('#command').change(function () {
         //    var command = $(this).find(':selected').val();
         //    switch (command) {

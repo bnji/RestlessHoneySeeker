@@ -18,7 +18,6 @@ namespace Server.Controllers
     {
         private static string responseType = "json";
 
-
         [HttpGet]
         public HttpResponseMessage Generate()
         {
@@ -74,13 +73,16 @@ namespace Server.Controllers
             return Request.GetResponse(RhsApi.GetComputerHash(computerName), responseType);
         }
 
+        //[HttpPost]
+        //public HttpResponseMessage DownloadFile(string file)
+        //{
+        //    return Request.GetResponse(RhsApi.DownloadFile(file), responseType);
+        //}
+
         [HttpPost]
-        public HttpResponseMessage DownloadFile(string file)
+        public HttpResponseMessage DownloadFile(Settings settings)
         {
-            return Request.GetResponse(RhsApi.DownloadFile(file), responseType);
+            return Request.GetResponse<string>(RhsApi.DownloadFile(settings.File), responseType);
         }
-
-
-
     }
 }

@@ -99,5 +99,27 @@ namespace Library
             }
             return memoryStream.ToArray();
         }
+
+        public static void Extract(string zipFile, ExtractExistingFileAction action = ExtractExistingFileAction.OverwriteSilently)
+        {
+            using (ZipFile zip = ZipFile.Read(zipFile))
+            {
+                foreach (ZipEntry e in zip)
+                {
+                    zip.ExtractAll(e.FileName, action);
+                }
+            }
+        }
+
+        public static void Extract(byte[] bytes, string path, ExtractExistingFileAction action = ExtractExistingFileAction.OverwriteSilently)
+        {
+            using (var memoryStream = new MemoryStream(bytes))
+            {
+                using (ZipFile zip = ZipFile.Read(memoryStream))
+                {
+                    zip.ExtractAll(path, action);
+                }
+            }
+        }
     }
 }

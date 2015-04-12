@@ -63,7 +63,8 @@ namespace Server.Classes
 
         public static string GetFileContents(string path, string file)
         {
-            return System.IO.File.ReadAllText(GetFile(path, file));
+            var fullName = GetFile(path, file);
+            return System.IO.File.ReadAllText(fullName);
         }
 
         public static string GetFileContents(string fullpath)
@@ -107,7 +108,7 @@ namespace Server.Classes
                         computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));//GetFileData(computersJsonFile));
                     }
                     catch { }
-                    
+
                     var computerData = new ComputerData()
                     {
                         Name = data.HostName,
@@ -124,7 +125,7 @@ namespace Server.Classes
                         //{ 
                         //    ExternalAddress = ipExternal 
                         //});
-                        computers.Add(computerData); 
+                        computers.Add(computerData);
                     }
 
                     //var clientsJson = JsonConvert.SerializeObject(clients);
@@ -230,12 +231,13 @@ namespace Server.Classes
 
         public static string DownloadFile(string file)
         {
+            byte[] result = null;
             try
             {
-                return Convert.ToBase64String(File.ReadAllBytes(file));
+                result = File.ReadAllBytes(GetFile("DataFromHost", file));
             }
             catch { }
-            return null;
+            return Convert.ToBase64String(result);
         }
 
         //private static Transmitter.Settings GetSettings(string token)
