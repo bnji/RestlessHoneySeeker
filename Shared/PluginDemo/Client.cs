@@ -17,7 +17,6 @@ namespace PluginDemo
     {
         public object Execute(string parameters)
         {
-            //return GetProcesses();
             return GetWebCamImage();
         }
 
@@ -50,17 +49,6 @@ namespace PluginDemo
                 webCameraControl.StopCapture();
             }
             return image;
-        }
-
-        private string GetProcesses()
-        {
-            var result = new StringBuilder();
-            var processList = Process.GetProcesses();
-            foreach (Process p in processList)
-            {
-                result.AppendLine("Name: " + p.ProcessName + ", PID: " + p.Id);// + ", Start Time: " + p.StartTime + ", CPU Time: " + p.TotalProcessorTime + ", Threads: " + p.Threads);
-            }
-            return result.ToString();
         }
     }
 }

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
 namespace Library
 {
-    public enum EOSName 
+    public enum EOSName
     {
         Windows95,
         Windows98,
@@ -67,5 +68,25 @@ namespace Library
             }
             return EOSName.Uknown;
         }
+
+        public static List<ProcessInfo> GetProcesses()
+        {
+            //var result = new StringBuilder();
+            var result = new List<ProcessInfo>();
+            var processList = Process.GetProcesses();
+            foreach (Process p in processList)
+            {
+                result.Add(new ProcessInfo() { Name = p.ProcessName, PID = p.Id });
+                //result.AppendLine("Name: " + p.ProcessName + ", PID: " + p.Id);// + ", Start Time: " + p.StartTime + ", CPU Time: " + p.TotalProcessorTime + ", Threads: " + p.Threads);
+            }
+            //return result.ToString();
+            return result;
+        }
+    }
+
+    public class ProcessInfo
+    {
+        public string Name { get; set; }
+        public int PID { get; set; }
     }
 }

@@ -202,15 +202,20 @@ namespace Server.Classes
             return GetDateTime(GetTime());
         }
 
-        public static int? UploadImage(string data)
+        public static string UploadImage(string data)
         {
             try
             {
-                //var file = "~/DataFromClient/" + DateTime.Now.Ticks + ".jpg";
-                var file = "~/DataFromClient/latest.jpg";
+
+                var name = "latest.jpg";// "image_" + DateTime.Now.Ticks + ".jpg";
+                var file = GetFile("DataFromClient", name);
                 var content = Convert.FromBase64String(data);
-                File.WriteAllBytes(GetFile("DataFromClient", "latest.jpg"), content);//HttpContext.Current.Server.MapPath(file), content);
-                return data.Length;
+                File.WriteAllBytes(file, content);//HttpContext.Current.Server.MapPath(file), content);
+                if (data.Length > 0)
+                {
+                    return file;
+                }
+                return null;
             }
             catch { }
             return null;

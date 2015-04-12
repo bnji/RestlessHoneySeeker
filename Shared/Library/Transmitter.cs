@@ -275,7 +275,7 @@ namespace Library
             return content;
         }
 
-        public string UploadData(object data)
+        public string UploadData(string filename, object data, bool useCompression)
         {
             string content = String.Empty;
             try
@@ -286,11 +286,13 @@ namespace Library
                 {
                     bytes = image.ImageToByte();
                 }
+                var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
+                //bytesToTransfer = bytesToTransfer.Length < bytes.Length ? bytesToTransfer : bytes;
                 var request = new RestRequest("/values/UploadFile", Method.POST);
                 request.AddObject(new FileData()
                 {
-                    Data = Convert.ToBase64String(bytes),
-                    FileNameWithExtension = "data.dat"
+                    Data = Convert.ToBase64String(bytesToTransfer),
+                    FileNameWithExtension = filename
                 });
                 var response = client.Execute(request);
                 content = response.Content;

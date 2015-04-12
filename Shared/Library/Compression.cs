@@ -100,6 +100,27 @@ namespace Library
             return memoryStream.ToArray();
         }
 
+        public static byte[] Compress(string name, byte[] data, string password = null)
+        {
+            byte[] result = null;
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var zip = new ZipFile())
+                {
+                    if (!String.IsNullOrEmpty(password))
+                    {
+                        EncryptionAlgorithm encryption = EncryptionAlgorithm.WinZipAes256;
+                        zip.Password = password;
+                        zip.Encryption = encryption;
+                    }
+                    zip.AddEntry(name, data);
+                    zip.Save(memoryStream);
+                }
+                result = memoryStream.ToArray();
+            }
+            return result;
+        }
+
         public static void Extract(string zipFile, ExtractExistingFileAction action = ExtractExistingFileAction.OverwriteSilently)
         {
             using (ZipFile zip = ZipFile.Read(zipFile))

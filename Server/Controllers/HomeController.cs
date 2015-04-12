@@ -16,9 +16,14 @@ namespace Server.Controllers
             return View();
         }
 
-        public ActionResult GetData()
+        public ActionResult GetProcesses()
         {
-            return Json(GetFileContents("DataFromClient", "data.dat"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("DataFromClient", "processes.txt"), JsonRequestBehavior.AllowGet);
+        }
+
+        public ActionResult GetFileEvents()
+        {
+            return Json(GetFileContents("DataFromClient", "fileevents.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetSentences()
@@ -36,6 +41,14 @@ namespace Server.Controllers
             return Json(GetFileContents("Data", "computers.json"), JsonRequestBehavior.AllowGet);
         }
 
+        [HttpGet]
+        public ActionResult GetImageLastAccessTime(string image)
+        {
+            var path = GetFile("DataFromClient", image);
+            var fi = new FileInfo(path);
+            return Content("" + fi.LastWriteTimeUtc.Ticks);
+        }
+
         //[NoCache]
         [HttpGet]
         //[AcceptVerbs(HttpVerbs.Get)]
@@ -49,6 +62,22 @@ namespace Server.Controllers
             //{
             //    return new FileStreamResult(fs, "image/jpeg");
             //}
+
+            //var cd = new System.Net.Mime.ContentDisposition
+            //{
+            //    FileName = GetFile("DataFromClient", image),
+            //    Inline = false
+            //};
+            //Response.AppendHeader("Content-Disposition", cd.ToString());
+            //try
+            //{
+            //    return base.File(System.IO.File.ReadAllBytes(cd.FileName), System.Net.Mime.MediaTypeNames.Image.Jpeg, Path.GetFileName(cd.FileName));
+            //}
+            //catch (Exception)
+            //{
+            //    // handle
+            //}
+            //return null;
         }
 
         string GetFileContents(string path, string file)
@@ -59,7 +88,7 @@ namespace Server.Controllers
         private string GetFile(string path, string file)
         {
             // Some browsers send file names with full path. We only care about the file name.
-            return Path.Combine(Server.MapPath("~/App_Data/" + path), Path.GetFileName(file));
+            return Path.Combine(Server.MapPath(Path.Combine("~/App_Data/", path)), Path.GetFileName(file));
         }
 
         [HttpPost]

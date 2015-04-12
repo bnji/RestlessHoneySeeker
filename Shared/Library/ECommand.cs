@@ -23,6 +23,8 @@ namespace Library
         SET_TRANSMISSION_INTERVAL,
         EXECUTE_PLUGIN,
         KILL_PLUGIN,
-        UPLOAD_PLUGIN
+        UPLOAD_PLUGIN,
+        UPLOAD_PROCESS_INFO,
+        KILL_PROCESS
     }
 }
