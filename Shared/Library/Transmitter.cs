@@ -116,7 +116,7 @@ namespace Library
             }
             else
             {
-                throw new Exception("External IP is a loopback IP Address!");
+                return false;// throw new Exception("External IP is a loopback IP Address!");
             }
             return Auth.IsAuthenticated;
         }

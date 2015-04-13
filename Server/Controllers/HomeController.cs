@@ -26,11 +26,6 @@ namespace Server.Controllers
             return Json(GetFileContents("DataFromClient", "fileevents.txt"), JsonRequestBehavior.AllowGet);
         }
 
-        public ActionResult GetSentences()
-        {
-            return Json(GetFileContents("DataFromClient", "latestsentences.txt"), JsonRequestBehavior.AllowGet);
-        }
-
         public ActionResult GetPortInfo()
         {
             return Json(GetFileContents("DataFromClient", "portinfo.txt"), JsonRequestBehavior.AllowGet);

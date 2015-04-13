@@ -33,6 +33,7 @@ namespace PluginManager
             {
                 try
                 {
+                    plugin.Client.Kill();
                     result = Plugins.Remove(plugin);
                 }
                 catch
@@ -43,22 +44,18 @@ namespace PluginManager
             return result;
         }
 
-        public PluginManager(IPluginHost _host, String _pluginAppPath, Boolean _loadPlugins = true, String _configFiletype = "*.json")
+        public PluginManager(IPluginHost _host, String _pluginAppPath, String _configFiletype = "*.json")
         {
             Host = _host;
-            Plugins = new List<IPlugin>();
-
             PluginAppPath = _pluginAppPath;
             ConfigFiletype = _configFiletype;
-
-            if (_loadPlugins)
-                LoadPlugins();
+            Plugins = LoadPlugins();
         }
 
-        public void LoadPlugins()
+        public List<IPlugin> LoadPlugins()
         {
-            var plugins = GetValidPlugins();
-            foreach (PluginInfo info in plugins)
+            var plugins = new List<IPlugin>();
+            foreach (PluginInfo info in GetValidPlugins())
             {
                 try
                 {
@@ -78,19 +75,19 @@ namespace PluginManager
                             }
                             catch (Exception ex)
                             {
-                                MessageBox.Show("" + ex);
-                                Console.Write(ex);
-                                return;
+                                //MessageBox.Show("" + ex);
+                                //Console.Write(ex);
+                                //return null;
                             }
-                            if (plugin == null)
-                                return;
-
-                            plugin.Host = this.Host;
-                            plugin.Info = info;
-                            Int32 index = Plugins.FindIndex((IPlugin p) => p.Info.AssemblyName == plugin.Info.AssemblyName);
-                            if (index == -1)
+                            if (plugin != null)
                             {
-                                Plugins.Add(plugin);
+                                plugin.Host = this.Host;
+                                plugin.Info = info;
+                                Int32 index = plugins.FindIndex((IPlugin p) => p.Info.AssemblyName == plugin.Info.AssemblyName);
+                                if (index == -1)
+                                {
+                                    plugins.Add(plugin);
+                                }
                             }
                         }
                     }
@@ -100,6 +97,7 @@ namespace PluginManager
                     Console.WriteLine(ex);
                 }
             }
+            return plugins;
         }
 
         public List<PluginInfo> GetValidPlugins()

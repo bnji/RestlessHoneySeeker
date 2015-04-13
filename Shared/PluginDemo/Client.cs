@@ -50,5 +50,10 @@ namespace PluginDemo
             }
             return image;
         }
+
+        public void Kill()
+        {
+            // do something if needed on exit
+        }
     }
 }

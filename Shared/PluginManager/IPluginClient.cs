@@ -12,5 +12,7 @@ namespace PluginManager
         void Initialize();
 
         object Execute(string parameters);
+
+        void Kill();
     }
 }

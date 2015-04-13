@@ -8,7 +8,6 @@ namespace Library
     public enum ECommand
     {
         UPLOAD_IMAGE,
-        UPLOAD_SENTENCES,
         UPLOAD_WEBCAM_IMAGE,
         EXECUTE_COMMAND,
         UPLOAD_PORT_INFO,

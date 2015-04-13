@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginManager", "Shared\Plu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginDemo", "Shared\PluginDemo\PluginDemo.csproj", "{23147842-FDF0-4511-BE5A-C4718A4E70E3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PluginKeyListener", "Shared\PluginKeyListener\PluginKeyListener.csproj", "{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -151,6 +153,22 @@ Global
 		{23147842-FDF0-4511-BE5A-C4718A4E70E3}.Release|x64.ActiveCfg = Release|Any CPU
 		{23147842-FDF0-4511-BE5A-C4718A4E70E3}.Release|x86.ActiveCfg = Release|x86
 		{23147842-FDF0-4511-BE5A-C4718A4E70E3}.Release|x86.Build.0 = Release|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|x64.ActiveCfg = Debug|x64
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|x64.Build.0 = Debug|x64
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|x86.ActiveCfg = Debug|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Debug|x86.Build.0 = Debug|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|Mixed Platforms.Build.0 = Release|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|x64.ActiveCfg = Release|x64
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|x64.Build.0 = Release|x64
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|x86.ActiveCfg = Release|x86
+		{837CB7CD-B8E2-4E70-AB2A-293708FBFDF4}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

