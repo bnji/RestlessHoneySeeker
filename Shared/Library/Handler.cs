@@ -22,8 +22,6 @@ namespace Library
         public FileDirHandler FileDirInfo { get; private set; }
         private FileSystemWatcher watcher;
         private Timer screenShotTimer;
-        private Image webcamImage;
-        private WebCam webcam;
 
         public event OnScreenshotDelegate OnScreenshot;
         public event OnFileEventDelegate OnFileEvent;
@@ -144,16 +142,6 @@ namespace Library
             {
                 Replicator.Instance.Replicate(true);
             }
-        }
-
-        public Image CaptureWebcamImage(ref PictureBox picBox)
-        {
-            webcam = new WebCam();
-            webcam.InitializeWebCam(ref picBox);
-            webcam.Start();
-            webcamImage = picBox.Image;
-            webcam.Stop();
-            return webcamImage;
         }
 
         void HandleExit(String msg)

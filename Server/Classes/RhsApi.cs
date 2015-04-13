@@ -75,17 +75,12 @@ namespace Server.Classes
         public static string GetFile(string path, string file)
         {
             // Some browsers send file names with full path. We only care about the file name.
-            return Path.Combine(HttpContext.Current.Server.MapPath("~/App_Data/" + path), Path.GetFileName(file));
+            return Path.Combine(HttpContext.Current.Server.MapPath(path), Path.GetFileName(file));
         }
-
-        //private static string GetFileData(string file)
-        //{
-        //    return File.ReadAllText(HttpContext.Current.Server.MapPath(file));
-        //}
 
         private static Keys GetKeys()
         {
-            return JsonConvert.DeserializeObject<Keys>(GetFileContents("Data", "keys.json"));// GetFileData("~/Data/keys.json"));
+            return JsonConvert.DeserializeObject<Keys>(GetFileContents("~/App_Data", "keys.json"));
         }
 
         public static AuthResult Authorize(AuthData data)
@@ -98,14 +93,11 @@ namespace Server.Classes
                 if (hashCheck.Equals(data.Hash))
                 {
                     var newToken = General.Sha1Hash(privateKey + hashCheck + GetDateTimeFormatted());
-                    //var file = "~/Data/clients.json";
-                    var computersJsonFile = GetFile("Data", "computers.json");// "~/Data/computers.json";
-                    //var clients = new List<Client>();
+                    var computersJsonFile = GetFile("~/App_Data/", "computers.json");
                     var computers = new List<ComputerData>();
                     try
                     {
-                        //clients = JsonConvert.DeserializeObject<List<Client>>(GetFileData(file));
-                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));//GetFileData(computersJsonFile));
+                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
                     }
                     catch { }
 
@@ -118,21 +110,13 @@ namespace Server.Classes
                         Hash = null
                     };
                     computerData.Hash = Transmitter.GetComputerHash(computerData);
-                    //if (clients.Where(c => c.ExternalAddress == ipExternal).FirstOrDefault() == null)
                     if (computers.Where(c => c.Hash == computerData.Hash).FirstOrDefault() == null)
                     {
-                        //clients.Add(new Client() 
-                        //{ 
-                        //    ExternalAddress = ipExternal 
-                        //});
                         computers.Add(computerData);
                     }
 
-                    //var clientsJson = JsonConvert.SerializeObject(clients);
-                    //File.WriteAllText(HttpContext.Current.Server.MapPath(file), clientsJson);
-
                     var computersJson = JsonConvert.SerializeObject(computers);
-                    File.WriteAllText(computersJsonFile, computersJson);// HttpContext.Current.Server.MapPath(computersJsonFile), computersJson);
+                    File.WriteAllText(computersJsonFile, computersJson);
 
                     return new AuthResult()
                     {
@@ -154,12 +138,12 @@ namespace Server.Classes
                 if (hashCheck.Equals(data.Hash))
                 {
                     var newToken = General.Sha1Hash(privateKey + hashCheck + GetDateTimeFormatted());
-                    var computersJsonFile = GetFile("Data", "computers.json");// "~/Data/computers.json";
+                    var computersJsonFile = GetFile("~/App_Data/", "computers.json");
 
                     var computers = new List<ComputerData>();
                     try
                     {
-                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));// GetFileData(computersJsonFile));
+                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
                     }
                     catch { }
 
@@ -177,7 +161,8 @@ namespace Server.Classes
                         computers.Remove(computerData);
                     }
                     var computersJson = JsonConvert.SerializeObject(computers);
-                    File.WriteAllText(GetFileContents(computersJsonFile), computersJson);// HttpContext.Current.Server.MapPath(computersJsonFile), computersJson);
+                    System.Threading.Thread.Sleep(250);
+                    File.WriteAllText(computersJsonFile, computersJson);
 
                     return true;
                 }
@@ -208,9 +193,9 @@ namespace Server.Classes
             {
 
                 var name = "latest.jpg";// "image_" + DateTime.Now.Ticks + ".jpg";
-                var file = GetFile("DataFromClient", name);
+                var file = GetFile("~/DataFromClient/", name);
                 var content = Convert.FromBase64String(data);
-                File.WriteAllBytes(file, content);//HttpContext.Current.Server.MapPath(file), content);
+                File.WriteAllBytes(file, content);
                 if (data.Length > 0)
                 {
                     return file;
@@ -227,7 +212,7 @@ namespace Server.Classes
             {
                 byte[] bytes = Convert.FromBase64String(data.Data);
                 var fileName = data.FileNameWithExtension;
-                File.WriteAllBytes(GetFile("DataFromClient", fileName), bytes);//HttpContext.Current.Server.MapPath("~/DataFromClient/" + fileName), bytes);
+                File.WriteAllBytes(GetFile("~/DataFromClient/", fileName), bytes);
                 return bytes.Length;
             }
             catch { }
@@ -239,37 +224,22 @@ namespace Server.Classes
             byte[] result = null;
             try
             {
-                result = File.ReadAllBytes(GetFile("DataFromHost", file));
+                result = File.ReadAllBytes(GetFile("~/DataFromHost/", file));
             }
             catch { }
             return Convert.ToBase64String(result);
         }
 
-        //private static Transmitter.Settings GetSettings(string token)
-        //{
-        //    try
-        //    {
-        //        return JsonConvert.DeserializeObject<Transmitter.Settings>(GetFileData("~/Data/settings.json"));
-        //    }
-        //    catch { }
-        //    return new Transmitter.Settings();
-        //}
-
         public static Settings GetSettings()
         {
-            return JsonConvert.DeserializeObject<Settings>(GetFileContents("Data", "settings.json"));// GetFileData("~/Data/settings.json"));
-            //var settings = GetSettings(token);
-            //if (settings != null)
-            //    return settings.Command;
-            //return Transmitter.ECommand.DO_NOTHING;
+            return JsonConvert.DeserializeObject<Settings>(GetFileContents("~/App_Data", "settings.json"));
         }
 
         internal static int? SaveSettings(Settings settingsEncoded)
         {
             try
             {
-                var file = GetFile("Data", "settings.json");
-                //byte[] bytes = Convert.FromBase64String(settingsEncoded);
+                var file = GetFile("~/App_Data/", "settings.json");
                 byte[] bytes = Encoding.Default.GetBytes(JsonConvert.SerializeObject(settingsEncoded));
                 File.WriteAllBytes(file, bytes);
                 return bytes.Length;
@@ -280,7 +250,7 @@ namespace Server.Classes
 
         public static string GetComputerHash(string computerName)
         {
-            var data = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents("Data", "computers.json"));//GetFileData("~/Data/computers.json"));
+            var data = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents("~/App_Data", "computers.json"));
             var computer = data.Where(c => c.Name == computerName).FirstOrDefault();
             if (computer != null)
             {
@@ -288,13 +258,6 @@ namespace Server.Classes
             }
             return null;
         }
-
-
-
-        //public static void DeAuthorize(string tokenValue)
-        //{
-
-        //}
 
         //private static ResetToken(bool datetimeValid, string tokenValue) {
         //    var dateInPast = GetDateTimeFormatted();

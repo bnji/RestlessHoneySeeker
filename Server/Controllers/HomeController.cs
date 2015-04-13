@@ -18,28 +18,28 @@ namespace Server.Controllers
 
         public ActionResult GetProcesses()
         {
-            return Json(GetFileContents("DataFromClient", "processes.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/DataFromClient/", "processes.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetFileEvents()
         {
-            return Json(GetFileContents("DataFromClient", "fileevents.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/DataFromClient/", "fileevents.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetPortInfo()
         {
-            return Json(GetFileContents("DataFromClient", "portinfo.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/DataFromClient/", "portinfo.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetComputers()
         {
-            return Json(GetFileContents("Data", "computers.json"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/App_Data/", "computers.json"), JsonRequestBehavior.AllowGet);
         }
 
         [HttpGet]
         public ActionResult GetImageLastAccessTime(string image)
         {
-            var path = GetFile("DataFromClient", image);
+            var path = GetFile("~/DataFromClient/", image);
             var fi = new FileInfo(path);
             return Content("" + fi.LastWriteTimeUtc.Ticks);
         }
@@ -50,8 +50,8 @@ namespace Server.Controllers
         //[OutputCache(CacheProfile = "Images")]
         public FileResult GetImage(string image)
         {
-            //return Content(GetFileContents("DataFromClient", "latest.jpg"));
-            var path = GetFile("DataFromClient", image);
+            //return Content(GetFileContents("~/DataFromClient", "latest.jpg"));
+            var path = GetFile("~/DataFromClient/", image);
             return base.File(path, "image/jpeg");
             //using (var fs = new FileStream(path, FileMode.Open))
             //{
@@ -83,7 +83,7 @@ namespace Server.Controllers
         private string GetFile(string path, string file)
         {
             // Some browsers send file names with full path. We only care about the file name.
-            return Path.Combine(Server.MapPath(Path.Combine("~/App_Data/", path)), Path.GetFileName(file));
+            return Path.Combine(Server.MapPath(path), Path.GetFileName(file));
         }
 
         [HttpPost]
@@ -92,7 +92,7 @@ namespace Server.Controllers
             var file = HttpContext.Request.Files["UploadedFile"];
             if (file != null)
             {
-                file.SaveAs(GetFile("DataFromHost", Path.GetFileName(file.FileName)));
+                file.SaveAs(GetFile("~/DataFromHost/", Path.GetFileName(file.FileName)));
                 return Content("");
             }
             return Content("error");

@@ -192,22 +192,23 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\Custom.css" />
     <Content Include="Content\images\logo.png" />
-    <Content Include="App_Data\DataFromClient\index.html" />
+    <Content Include="DataFromClient\index.html" />
+    <Content Include="DataFromHost\index.html" />
     <Content Include="favicon.ico" />
     <Content Include="fonts\glyphicons-halflings-regular.svg" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\bootstrap.js" />
     <Content Include="Scripts\bootstrap.min.js" />
-    <Content Include="App_Data\Data\computers.json">
+    <Content Include="App_Data\computers.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <BrowseToURL>~/Data/computers.json</BrowseToURL>
     </Content>
-    <Content Include="App_Data\Data\keys.json">
+    <Content Include="App_Data\keys.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <BrowseToURL>~/Data/keys.json</BrowseToURL>
     </Content>
-    <Content Include="App_Data\Data\settings.json">
+    <Content Include="App_Data\settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <BrowseToURL>~/Data/settings.json</BrowseToURL>
     </Content>
@@ -278,9 +279,7 @@
     <Content Include="packages.config" />
     <None Include="Project_Readme.html" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\DataFromHost\" />
-  </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>

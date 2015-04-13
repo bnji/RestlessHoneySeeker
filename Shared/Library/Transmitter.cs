@@ -141,7 +141,6 @@ namespace Library
                     Hash = hash
                 });
                 var response = client.Execute(request);
-                var foo = "";
             }
             else
             {

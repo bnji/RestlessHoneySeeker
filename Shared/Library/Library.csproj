@@ -78,9 +78,6 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="WebCam_Capture">
-      <HintPath>..\DLL\WebCam_Capture.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compression.cs" />
@@ -102,7 +99,6 @@
     <Compile Include="Settings.cs" />
     <Compile Include="Transmitter.cs" />
     <Compile Include="Watcher.cs" />
-    <Compile Include="Webcam.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
