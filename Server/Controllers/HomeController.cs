@@ -75,6 +75,26 @@ namespace Server.Controllers
             //return null;
         }
 
+        [HttpGet]
+        public FileResult GetFile(string file)
+        {
+            var cd = new System.Net.Mime.ContentDisposition
+            {
+                FileName = GetFile("~/DataFromClient/", file),
+                Inline = false
+            };
+            //Response.AppendHeader("Content-Disposition", cd.ToString());
+            try
+            {
+                return base.File(System.IO.File.ReadAllBytes(cd.FileName), System.Net.Mime.MediaTypeNames.Application.Octet, Path.GetFileName(cd.FileName));
+            }
+            catch (Exception)
+            {
+                // handle
+            }
+            return null;
+        }
+
         string GetFileContents(string path, string file)
         {
             return System.IO.File.ReadAllText(GetFile(path, file));

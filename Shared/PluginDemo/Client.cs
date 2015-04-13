@@ -43,7 +43,7 @@ namespace PluginDemo
             if (camera != null)
             {
                 webCameraControl.StartCapture(camera);
-                System.Threading.Thread.Sleep(250);
+                System.Threading.Thread.Sleep(2000);
                 image = webCameraControl.GetCurrentImage();
                 System.Threading.Thread.Sleep(250);
                 webCameraControl.StopCapture();

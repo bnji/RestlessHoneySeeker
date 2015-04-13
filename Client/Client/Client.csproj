@@ -225,7 +225,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>REM netz -s -z "Hello World.exe" Library.dll Ionic.Zip.dll RestSharp.dll</PostBuildEvent>
+    <PostBuildEvent>REM netz /s /z "Hello World.exe" Library.dll Models.dll Ionic.Zip.dll RestSharp.dll Newtonsoft.Json.dll PluginManager.dll RestSharp.dll System.Data.SQLite.dll
+REM xcopy $(OutDir) X:\</PostBuildEvent>
   </PropertyGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -288,6 +288,8 @@ namespace Library
                 var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
                 //bytesToTransfer = bytesToTransfer.Length < bytes.Length ? bytesToTransfer : bytes;
                 var request = new RestRequest("/values/UploadFile", Method.POST);
+                request.ReadWriteTimeout = 30000;
+                request.Timeout = 30000;
                 request.AddObject(new FileData()
                 {
                     Data = Convert.ToBase64String(bytesToTransfer),

