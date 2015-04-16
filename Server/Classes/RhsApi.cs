@@ -177,9 +177,9 @@ namespace Server.Classes
         {
             try
             {
+                var file = GetFile("~/DataFromClient/", data.FileNameWithExtension);
                 byte[] bytes = Convert.FromBase64String(data.Data);
-                var fileName = data.FileNameWithExtension;
-                File.WriteAllBytes(GetFile("~/DataFromClient/", fileName), bytes);
+                File.WriteAllBytes(file, bytes);
                 return bytes.Length;
             }
             catch { }
