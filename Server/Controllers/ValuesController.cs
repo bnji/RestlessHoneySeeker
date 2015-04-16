@@ -46,7 +46,7 @@ namespace Server.Controllers
         public HttpResponseMessage UploadImage(ImageData data)
         {
             //data = new ImageData() { Image = Library.ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb) };
-            return Request.GetResponse<string>(RhsApi.UploadImage(data.Image), responseType);
+            return Request.GetResponse<string>(RhsApi.UploadImage(data), responseType);
         }
 
         [HttpPost]

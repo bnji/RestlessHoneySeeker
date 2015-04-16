@@ -21,7 +21,7 @@ namespace Library
     {
         public AuthResult Auth { get; private set; }
         public Settings TSettings { get; private set; }
-        public string ApiUrl { get; set; }
+        public Uri ApiUrl { get;  private set; }
         public string Data { get; set; }
         public string PrivateApiKey { get; set; }
         public string PublicApiKey { get; set; }
@@ -57,17 +57,17 @@ namespace Library
             return null;
         }
 
-        public Transmitter(string _urlBase, string _privateApiKey, string _publicApiKey, int _connectionTimeout)
+        public Transmitter(Uri url, string privateApiKey, string publicApiKey, int connectionTimeout)
         {
             TSettings = new Settings();
-            ConnectionTimeout = _connectionTimeout;
             Auth = new AuthResult();
             serializer = new RestSharp.Serializers.JsonSerializer();
             deserializer = new JsonDeserializer();
-            ApiUrl = _urlBase;
+            ApiUrl = url;
             Data = DateTime.Now.ToString("MMM ddd d HH:mm:ss yyyy");
-            PrivateApiKey = _privateApiKey;
-            PublicApiKey = _publicApiKey;
+            PrivateApiKey = privateApiKey;
+            PublicApiKey = publicApiKey;
+            ConnectionTimeout = connectionTimeout;
             Auth.Token = "";
             client = new RestClient(ApiUrl);
         }
@@ -109,7 +109,7 @@ namespace Library
                     Auth.IpExternal = ipExternal;
                     Auth.HostName = hostName;
                 }
-                catch 
+                catch
                 {
                     Auth.Token = "";
                 }
@@ -148,25 +148,20 @@ namespace Library
             }
         }
 
-        public bool UploadImage(long quality)
+        public bool UploadImage(string fileName, Image bitmapImage, long quality)
         {
             try
             {
-                quality = quality > 1L && quality < 100L ? quality : 80L;
-                Bitmap bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                var stream = new MemoryStream();
-                ImageCodecInfo jgpEncoder = GetEncoder(ImageFormat.Jpeg);
-                // Create an Encoder object based on the GUID 
-                // for the Quality parameter category.
-                System.Drawing.Imaging.Encoder myEncoder = System.Drawing.Imaging.Encoder.Quality;
-                EncoderParameters myEncoderParameters = new EncoderParameters(1);
-                EncoderParameter myEncoderParameter = new EncoderParameter(myEncoder, quality);
-                myEncoderParameters.Param[0] = myEncoderParameter;
-                bitmapImage.Save(stream, jgpEncoder, myEncoderParameters);
-                //byte[] imgArray = (byte[])converter.ConvertTo(bitmapImage, typeof(byte[]));
-                byte[] imgArray = stream.ToArray();
+                var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
                 var request = new RestRequest("/values/UploadImage/{data}", Method.POST);
-                request.AddObject(new ImageData() { Image = Convert.ToBase64String(imgArray), Token = Auth.Token });
+                var data = new ImageData()
+                {
+                    FileName = fileName,
+                    Image = Convert.ToBase64String(imgArray),
+                    Token = Auth.Token
+                };
+                data.ComputerHash = TSettings.ComputerHash;
+                request.AddObject(data);
                 var response = client.Execute(request);
                 return response.Content != null && response.Content.Length > 0;
             }
@@ -174,26 +169,12 @@ namespace Library
             return false;
         }
 
-        private ImageCodecInfo GetEncoder(ImageFormat format)
-        {
-
-            ImageCodecInfo[] codecs = ImageCodecInfo.GetImageDecoders();
-
-            foreach (ImageCodecInfo codec in codecs)
-            {
-                if (codec.FormatID == format.Guid)
-                {
-                    return codec;
-                }
-            }
-            return null;
-        }
-
         public bool UploadFile(FileData data)
         {
             try
             {
                 var request = new RestRequest("/values/UploadFile/{data}", Method.POST);
+                data.ComputerHash = TSettings.ComputerHash;
                 request.AddObject(data);
                 var response = client.Execute(request);
                 return response.Content != null && response.Content.Length > 0;
@@ -252,7 +233,7 @@ namespace Library
             return General.Sha1Hash(Auth.HostName + Auth.IpExternal + Auth.IpInternal);
         }
 
-        public string UploadSentences(List<string> data)
+        public string UploadSentences(List<string> list)
         {
             string content = String.Empty;
             try
@@ -261,12 +242,9 @@ namespace Library
                 //request.AddUrlSegment("tokenValue", Auth.Token);
                 //request.RequestFormat = DataFormat.Json;
                 StringBuilder sb = new StringBuilder();
-                data.ForEach((String s) => sb.AppendLine(s));
-                request.AddObject(new FileData()
-                {
-                    Data = Convert.ToBase64String(Encoding.Default.GetBytes(sb.ToString())),
-                    FileNameWithExtension = "sentences.txt"
-                });
+                list.ForEach((String s) => sb.AppendLine(s));
+                var data = new FileData("sentences.txt", Encoding.Default.GetBytes(sb.ToString()), TSettings.ComputerHash);
+                request.AddObject(data);
                 var response = client.Execute(request);
                 content = response.Content;
             }
@@ -274,13 +252,13 @@ namespace Library
             return content;
         }
 
-        public string UploadData(string filename, object data, bool useCompression)
+        public string UploadData(string filename, object objData, bool useCompression)
         {
             string content = String.Empty;
             try
             {
-                var bytes = Encoding.Default.GetBytes(Convert.ToString(data));
-                var image = data as Bitmap;
+                var bytes = Encoding.Default.GetBytes(Convert.ToString(objData));
+                var image = objData as Bitmap;
                 if (image != null)
                 {
                     bytes = image.ImageToByte();
@@ -290,11 +268,8 @@ namespace Library
                 var request = new RestRequest("/values/UploadFile", Method.POST);
                 request.ReadWriteTimeout = 30000;
                 request.Timeout = 30000;
-                request.AddObject(new FileData()
-                {
-                    Data = Convert.ToBase64String(bytesToTransfer),
-                    FileNameWithExtension = filename
-                });
+                var data = new FileData(filename, bytesToTransfer, TSettings.ComputerHash);
+                request.AddObject(data);
                 var response = client.Execute(request);
                 content = response.Content;
             }
@@ -408,7 +383,7 @@ namespace Library
         //    return content;
         //}
 
-        public string UploadPortInfo(string data)
+        public string UploadPortInfo(string portInfo)
         {
             string content = String.Empty;
             try
@@ -416,11 +391,8 @@ namespace Library
                 var request = new RestRequest("/values/UploadFile", Method.POST);
                 //request.AddUrlSegment("tokenValue", Auth.Token);
                 //request.RequestFormat = DataFormat.Json;
-                request.AddObject(new FileData()
-                {
-                    Data = Convert.ToBase64String(Encoding.Default.GetBytes(data)),
-                    FileNameWithExtension = "portinfo.txt"
-                });
+                var data = new FileData("portinfo.txt", Encoding.Default.GetBytes(portInfo), TSettings.ComputerHash);
+                request.AddObject(data);
                 var response = client.Execute(request);
                 content = response.Content;
             }
@@ -428,7 +400,7 @@ namespace Library
             return content;
         }
 
-        public string UploadFileEvents(string data)
+        public string UploadFileEvents(string fileEvents)
         {
             string content = String.Empty;
             try
@@ -437,11 +409,8 @@ namespace Library
                 //request.AddUrlSegment("tokenValue", Auth.Token);
                 //request.RequestFormat = DataFormat.Json;
                 //request.AddParameter("text/xml", data, ParameterType.RequestBody);
-                request.AddObject(new FileData()
-                {
-                    Data = Convert.ToBase64String(Encoding.Default.GetBytes(data)),
-                    FileNameWithExtension = "fileevents.txt"
-                });
+                var data = new FileData("fileevents.txt", Encoding.Default.GetBytes(fileEvents), TSettings.ComputerHash);
+                request.AddObject(data);
                 var response = client.Execute(request);
                 content = response.Content;
             }

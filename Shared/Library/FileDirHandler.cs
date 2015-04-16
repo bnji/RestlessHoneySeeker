@@ -22,7 +22,17 @@ namespace Library
             {
                 fdi.ChangeCount++;
             }
-            FileDirInfoList.Add(new FileDirInfo() { ChangeCount = 0, DateTime = DateTime.Now, ChangeType = e.ChangeType, FileInfo = new FileInfo(e.FullPath) });
+            else
+            {
+                fdi = new FileDirInfo()
+                {
+                    ChangeCount = 0,
+                    DateTime = DateTime.Now,
+                    ChangeType = e.ChangeType,
+                    FileInfo = new FileInfo(e.FullPath)
+                };
+                FileDirInfoList.Add(fdi);
+            }
             Console.WriteLine(e.ChangeType);
         }
     }

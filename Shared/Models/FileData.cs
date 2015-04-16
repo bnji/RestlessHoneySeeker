@@ -22,5 +22,22 @@ namespace Models
             set { _fileNameWithExtension = value; }
         }
         public string Data { get; set; }
+
+        public FileData(string fileNameWithExtension, byte[] data, string computerHash)
+        {
+            _fileNameWithExtension = fileNameWithExtension;
+            Data = Convert.ToBase64String(data);
+            ComputerHash = computerHash;
+        }
+
+        public FileData(FileInfo fileInfo, byte[] data, string computerHash)
+        {
+            FileInfo = FileInfo;
+            _fileNameWithExtension = null;
+            Data = Convert.ToBase64String(data);
+            ComputerHash = computerHash;
+        }
+
+        public string ComputerHash { get; set; }
     }
 }

