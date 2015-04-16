@@ -12,7 +12,7 @@ namespace Models
         public string PublicKey { get; set; }
         public string Hash { get; set; }
 
-        public string IPInternal { get; set; }
+        public string IpInternal { get; set; }
 
         public string IpExternal { get; set; }
     }

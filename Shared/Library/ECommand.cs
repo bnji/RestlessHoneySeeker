@@ -25,6 +25,7 @@ namespace Library
         UPLOAD_PLUGIN,
         UPLOAD_PROCESS_INFO,
         KILL_PROCESS,
-        UPLOAD_CLIPBOARD_DATA
+        UPLOAD_CLIPBOARD_DATA,
+        EXECUTE_CODE
     }
 }

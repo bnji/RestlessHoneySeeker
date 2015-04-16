@@ -10,7 +10,7 @@ namespace Models
         public string Name { get; set; }
         public string IpExternal { get; set; }
         public string IpInternal { get; set; }
-        public string LastActive { get; set; }
+        public DateTime? LastActive { get; set; }
 
         public string Hash { get; set; }
     }

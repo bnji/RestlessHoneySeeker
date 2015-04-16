@@ -3,13 +3,13 @@
 }
 
 <div class="row">
-    <div class="col-md-8">
+    <div class="col-md-9">
         <div class="form-group">
             <label for="computer">Computer</label>
             <select id="computer" class="form-control"></select>
         </div>
     </div>
-    <div class="col-md-2 col-lg-offset-2">
+    <div class="col-md-2 col-lg-offset-1">
         <div class="form-group">
             <label for="computer">Upload</label>
             <form role="form" class="form-inline">
@@ -22,47 +22,47 @@
     </div>
 </div>
 <div class="row">
-    <div class="col-md-10">
-        <form role="form" class="form-inline">
+    <div class="col-md-9">
+        <div class="form-group">
+            <label for="command">Command</label>
+            <select id="command" class="form-control">
+                @*<option value="@Library.ECommand.DO_NOTHING">Do nothing</option>*@
+                <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
+                <option value="@Library.ECommand.UPLOAD_WEBCAM_IMAGE">Get webcam image</option>
+                <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
+                <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
+                <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
+                <option value="@Library.ECommand.UPLOAD_CLIPBOARD_DATA">Get Clipboard data</option>
+                <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
+                @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
+                <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
+                <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
+                @*<option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
+                <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>*@
+                <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
+                <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
+                <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
+                <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
+                <option value="@Library.ECommand.EXECUTE_CODE">Execute C# Code</option>
+                @*<option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>*@
+            </select>
+        </div>
 
-            <div class="form-group">
-                <label for="command">Command</label>
-                <select id="command" class="form-control">
-                    <option value="@Library.ECommand.DO_NOTHING">Do nothing</option>
-                    <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
-                    <option value="@Library.ECommand.UPLOAD_WEBCAM_IMAGE">Get webcam image</option>
-                    <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
-                    <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
-                    <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
-                    <option value="@Library.ECommand.UPLOAD_CLIPBOARD_DATA">Get Clipboard data</option>
-                    <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
-                    @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
-                    <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
-                    <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
-                    <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
-                    <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
-                    <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
-                    <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
-                    <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
-                    <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
-                    @*<option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>*@
-                </select>
-            </div>
+        <div class="form-group" id="filename_div">
+            <label for="FileName">File</label>
+            <input type="text" class="form-control" name="FileName" id="FileName" />
+        </div>
 
-            <div class="form-group">
-                <label for="FileName">File</label>
-                <input type="text" class="form-control" name="FileName" id="FileName" />
-            </div>
-
-            <div class="form-group">
-                <label for="Parameters">Parameters</label>
+        <div class="form-group">
+            <label for="Parameters">Parameters</label>
+            <span id="param_body">
                 <input type="text" class="form-control" name="Parameters" id="Parameters" />
-            </div>
+            </span>
+        </div>
 
-            <div class="form-group">
-                <button type="submit" id="execute" class="btn btn-primary">Execute</button>
-            </div>
-        </form>
+        <div class="form-group" style="vertical-align:top">
+            <button type="submit" id="execute" class="btn btn-primary">Execute</button>
+        </div>
     </div>
     <div class="col-md-2">
         <form role="form" class="form-inline">
@@ -272,8 +272,21 @@
             //alert(computerHash);
         });
 
-        $('form').submit(function (e) {
-            e.preventDefault();
+        $('#command').change(function () {
+            var command = $(this).find(':selected').val();
+            switch (command) {
+                case '@Library.ECommand.EXECUTE_CODE':
+                    $("#filename_div").hide();
+                    $("#param_body").html('<textarea rows="5" style="width:100%;" class="form-control" name="Parameters" id="Parameters"></textarea>');
+                    break;
+                default:
+                    $("#filename_div").show();
+                    $("#param_body").html('<input type="text" class="form-control" name="Parameters" id="Parameters" />');
+                    break;
+            }
+        });
+
+        $('#execute').click(function () {
             var command = $('#command').find(':selected').val();
             var file = $('#FileName').val();
             var parameters = $('#Parameters').val();

@@ -29,13 +29,19 @@ namespace Server.Controllers
         {
             return Request.GetResponse<AuthResult>(RhsApi.Authorize(data), responseType);
         }
-
+        
         [HttpPost]
         public HttpResponseMessage DeAuthorize(AuthData data)
         {
             return Request.GetResponse(RhsApi.DeAuthorize(data), responseType);
         }
-
+        
+        [HttpPost]
+        public HttpResponseMessage UpdateLastActive(AuthData data)
+        {
+            return Request.GetResponse(RhsApi.UpdateLastActive(data), responseType);
+        }
+        
         [HttpGet]
         public HttpResponseMessage GetDateTime(AuthData data)
         {

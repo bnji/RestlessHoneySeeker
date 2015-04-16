@@ -83,45 +83,108 @@ namespace Library
         /// <returns>Returns a valid Token value, if successfully authenticated, otherwise an empty string.</returns>
         public bool Authorize()
         {
-            IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
-            if (externalIpAddress != IPAddress.Loopback)
+            //IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
+            //if (externalIpAddress != IPAddress.Loopback)
+            //{
+            //    string hash = GetHashKey();
+            //    var hostName = System.Net.Dns.GetHostName();
+            //    var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
+            //    var ipExternal = Convert.ToString(externalIpAddress);
+            //    var request = new RestRequest("/values/Authorize/{data}", Method.POST);
+            //    var authData = new AuthData()
+            //    {
+            //        HostName = hostName,
+            //        IpInternal = ipInternal,
+            //        IpExternal = ipExternal,
+            //        Data = Data,
+            //        PublicKey = PublicApiKey,
+            //        Hash = hash
+            //    };
+            //    request.AddObject(authData);
+            //    var response = client.Execute(request);
+            //    try
+            //    {
+            //        Auth = JsonConvert.DeserializeObject<AuthResult>(response.Content);// deserializer.Deserialize<AuthResult>(response);
+            //        Auth.IpInternal = ipInternal;
+            //        Auth.IpExternal = ipExternal;
+            //        Auth.HostName = hostName;
+            //    }
+            //    catch
+            //    {
+            //        Auth.Token = "";
+            //    }
+            //}
+            //else
+            //{
+            //    return false;// throw new Exception("External IP is a loopback IP Address!");
+            //}
+
+            try
             {
-                string hash = GetHashKey();
-                var hostName = System.Net.Dns.GetHostName();
-                var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
-                var ipExternal = Convert.ToString(externalIpAddress);
+                var authData = GetAuthData();
                 var request = new RestRequest("/values/Authorize/{data}", Method.POST);
-                var authData = new AuthData()
-                {
-                    HostName = hostName,
-                    IPInternal = ipInternal,
-                    IpExternal = ipExternal,
-                    Data = Data,
-                    PublicKey = PublicApiKey,
-                    Hash = hash
-                };
                 request.AddObject(authData);
                 var response = client.Execute(request);
-                try
-                {
-                    Auth = JsonConvert.DeserializeObject<AuthResult>(response.Content);// deserializer.Deserialize<AuthResult>(response);
-                    Auth.IpInternal = ipInternal;
-                    Auth.IpExternal = ipExternal;
-                    Auth.HostName = hostName;
-                }
-                catch
-                {
-                    Auth.Token = "";
-                }
+                Auth = JsonConvert.DeserializeObject<AuthResult>(response.Content);// deserializer.Deserialize<AuthResult>(response);
+                Auth.IpInternal = authData.IpInternal;
+                Auth.IpExternal = authData.IpExternal;
+                Auth.HostName = authData.HostName;
             }
-            else
+            catch
             {
-                return false;// throw new Exception("External IP is a loopback IP Address!");
+                return false;
             }
             return Auth.IsAuthenticated;
         }
 
         public void DeAuthorize()
+        {
+            //IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
+            //if (externalIpAddress != IPAddress.Loopback)
+            //{
+            //    string hash = GetHashKey();
+            //    var hostName = System.Net.Dns.GetHostName(); ;
+            //    var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
+            //    var ipExternal = Convert.ToString(externalIpAddress);
+            //    var request = new RestRequest("/values/DeAuthorize/{data}", Method.POST);
+            //    request.AddObject(new AuthData()
+            //    {
+            //        HostName = hostName,
+            //        IpInternal = ipInternal,
+            //        IpExternal = ipExternal,
+            //        Data = Data,
+            //        PublicKey = PublicApiKey,
+            //        Hash = hash
+            //    });
+            //    var response = client.Execute(request);
+            //}
+            //else
+            //{
+            //    throw new Exception("External IP is a loopback IP Address!");
+            //}
+            try
+            {
+                var authData = GetAuthData();
+                var request = new RestRequest("/values/DeAuthorize/{data}", Method.POST);
+                request.AddObject(authData);
+                var response = client.Execute(request);
+            }
+            catch { }
+        }
+
+        public void UpdateLastActive()
+        {
+            try
+            {
+                var authData = GetAuthData();
+                var request = new RestRequest("/values/UpdateLastActive/{data}", Method.POST);
+                request.AddObject(authData);
+                var response = client.Execute(request);
+            }
+            catch { }
+        }
+
+        AuthData GetAuthData()
         {
             IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
             if (externalIpAddress != IPAddress.Loopback)
@@ -130,17 +193,15 @@ namespace Library
                 var hostName = System.Net.Dns.GetHostName(); ;
                 var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
                 var ipExternal = Convert.ToString(externalIpAddress);
-                var request = new RestRequest("/values/DeAuthorize/{data}", Method.POST);
-                request.AddObject(new AuthData()
+                return new AuthData()
                 {
                     HostName = hostName,
-                    IPInternal = ipInternal,
+                    IpInternal = ipInternal,
                     IpExternal = ipExternal,
                     Data = Data,
                     PublicKey = PublicApiKey,
                     Hash = hash
-                });
-                var response = client.Execute(request);
+                };
             }
             else
             {

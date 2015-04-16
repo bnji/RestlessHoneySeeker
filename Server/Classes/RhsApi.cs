@@ -74,8 +74,8 @@ namespace Server.Classes
                     {
                         Name = data.HostName,
                         IpExternal = data.IpExternal,
-                        IpInternal = data.IPInternal,
-                        LastActive = "",
+                        IpInternal = data.IpInternal,
+                        LastActive = DateTime.Now,
                         Hash = null
                     };
                     computerData.Hash = Transmitter.GetComputerHash(computerData);
@@ -120,8 +120,8 @@ namespace Server.Classes
                     {
                         Name = data.HostName,
                         IpExternal = data.IpExternal,
-                        IpInternal = data.IPInternal,
-                        LastActive = "",
+                        IpInternal = data.IpInternal,
+                        LastActive = DateTime.Now,
                         Hash = null
                     };
                     computerData.Hash = Transmitter.GetComputerHash(computerData);
@@ -133,6 +133,47 @@ namespace Server.Classes
                     System.Threading.Thread.Sleep(250);
                     File.WriteAllText(computersJsonFile, computersJson);
 
+                    return true;
+                }
+            }
+            return false;
+        }
+
+
+        public static bool UpdateLastActive(AuthData data)
+        {
+            Keys keys = GetKeys();
+            if (keys != null && keys.Public.Equals(data.PublicKey))
+            {
+                var privateKey = keys.Private;
+                var hashCheck = General.Sha1Hash(data.Data + privateKey + data.PublicKey);
+                if (hashCheck.Equals(data.Hash))
+                {
+                    //var newToken = General.Sha1Hash(privateKey + hashCheck + GetDateTimeFormatted());
+                    var computersJsonFile = GetFile("~/App_Data/", "computers.json");
+                    var computers = new List<ComputerData>();
+                    try
+                    {
+                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
+                    }
+                    catch { }
+                    var computerData = new ComputerData()
+                    {
+                        Name = data.HostName,
+                        IpExternal = data.IpExternal,
+                        IpInternal = data.IpInternal,
+                        LastActive = DateTime.Now,
+                        Hash = null
+                    };
+                    computerData.Hash = Transmitter.GetComputerHash(computerData);
+                    var computer = computers.Find(c => c.Hash == computerData.Hash);
+                    if(computer != null) 
+                    {
+                        computer.LastActive = DateTime.Now;
+                    }
+                    var computersJson = JsonConvert.SerializeObject(computers);
+                    System.Threading.Thread.Sleep(250);
+                    File.WriteAllText(computersJsonFile, computersJson);
                     return true;
                 }
             }
