@@ -17,17 +17,17 @@ namespace ServerV2.Controllers
 
         public ActionResult GetProcesses()
         {
-            return Json(GetFileContents("~/DataFromClient/" , "processes.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/App_Data/DataFromClient/" , "processes.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetFileEvents()
         {
-            return Json(GetFileContents("~/DataFromClient/", "fileevents.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/App_Data/DataFromClient/", "fileevents.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetPortInfo()
         {
-            return Json(GetFileContents("~/DataFromClient/", "portinfo.txt"), JsonRequestBehavior.AllowGet);
+            return Json(GetFileContents("~/App_Data/DataFromClient/", "portinfo.txt"), JsonRequestBehavior.AllowGet);
         }
 
         public ActionResult GetComputers()
@@ -39,7 +39,7 @@ namespace ServerV2.Controllers
         [HttpGet]
         public ActionResult GetImageLastAccessTime(string image)
         {
-            var path = GetFile("~/DataFromClient/", image);
+            var path = GetFile("~/App_Data/DataFromClient/", image);
             var fi = new FileInfo(path);
             return Content("" + fi.LastWriteTimeUtc.Ticks);
         }
@@ -51,7 +51,7 @@ namespace ServerV2.Controllers
         public FileResult GetImage(string image)
         {
             //return Content(GetFileContents("~/DataFromClient", "latest.jpg"));
-            var path = GetFile("~/DataFromClient/", image);
+            var path = GetFile("~/App_Data/DataFromClient/", image);
             return base.File(path, "image/jpeg");
             //using (var fs = new FileStream(path, FileMode.Open))
             //{
@@ -80,7 +80,7 @@ namespace ServerV2.Controllers
         {
             var cd = new System.Net.Mime.ContentDisposition
             {
-                FileName = GetFile("~/DataFromClient/", file),
+                FileName = GetFile("~/App_Data/DataFromClient/", file),
                 Inline = false
             };
             //Response.AppendHeader("Content-Disposition", cd.ToString());
@@ -112,7 +112,7 @@ namespace ServerV2.Controllers
             var file = HttpContext.Request.Files["UploadedFile"];
             if (file != null)
             {
-                file.SaveAs(GetFile("~/DataFromHost/", Path.GetFileName(file.FileName)));
+                file.SaveAs(GetFile("~/App_Data/DataFromHost/", Path.GetFileName(file.FileName)));
                 return Content("");
             }
             return Content("error");

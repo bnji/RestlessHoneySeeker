@@ -204,7 +204,7 @@ namespace ServerV2.Classes
         {
             try
             {
-                var file = GetFile("~/DataFromClient/", data.FileName);
+                var file = GetFile("~/App_Data/DataFromClient/", data.FileName);
                 var content = Convert.FromBase64String(data.Image);
                 File.WriteAllBytes(file, content);
                 if (data.Image.Length > 0)
@@ -221,7 +221,7 @@ namespace ServerV2.Classes
         {
             try
             {
-                var file = GetFile("~/DataFromClient/", data.FileNameWithExtension);
+                var file = GetFile("~/App_Data/DataFromClient/", data.FileNameWithExtension);
                 byte[] bytes = Convert.FromBase64String(data.Data);
                 File.WriteAllBytes(file, bytes);
                 return bytes.Length;
@@ -235,7 +235,7 @@ namespace ServerV2.Classes
             byte[] result = null;
             try
             {
-                result = File.ReadAllBytes(GetFile("~/DataFromHost/", file));
+                result = File.ReadAllBytes(GetFile("~/App_Data/DataFromHost/", file));
             }
             catch { }
             return Convert.ToBase64String(result);

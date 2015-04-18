@@ -212,10 +212,10 @@
     <Content Include="Content\images\logo.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="DataFromClient\index.html">
+    <Content Include="App_Data\DataFromClient\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="DataFromHost\index.html">
+    <Content Include="App_Data\DataFromHost\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="favicon.ico" />

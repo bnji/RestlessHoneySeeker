@@ -78,6 +78,9 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WebCameraControl">
+      <HintPath>..\DLL\WebCameraControl.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compression.cs" />
@@ -101,6 +104,7 @@
     <Compile Include="Security.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="Transmitter.cs" />
+    <Compile Include="UploadResult.cs" />
     <Compile Include="Watcher.cs" />
   </ItemGroup>
   <ItemGroup>

