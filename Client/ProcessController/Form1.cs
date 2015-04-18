@@ -96,7 +96,7 @@ namespace ProcessController
         Process Launch()
         {
             Process process = new Process();
-            process.StartInfo.FileName = "KeyLogTest.exe";
+            process.StartInfo.FileName = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Client\Client\bin\Debug\Hello World.exe";
             process.EnableRaisingEvents = true;
             process.Start();
             //process.Disposed += LaunchIfCrashed;
@@ -140,10 +140,13 @@ namespace ProcessController
 
         private void checkedListBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            Process p = GetProcessByName(checkedListBox1.SelectedItem.ToString());
-            textBox1.Clear();
-            textBox1.AppendText(String.Format("Memory: {0}, ", p.PrivateMemorySize64));
-            textBox1.AppendText(String.Format("Threads: {0}, ", p.Threads.Count));
+            if (checkedListBox1 != null && checkedListBox1.SelectedItem != null)
+            {
+                Process p = GetProcessByName(checkedListBox1.SelectedItem.ToString());
+                textBox1.Clear();
+                textBox1.AppendText(String.Format("Memory: {0}, ", p.PrivateMemorySize64));
+                textBox1.AppendText(String.Format("Threads: {0}, ", p.Threads.Count));
+            }
         }
 
         private void Form1_Load(object sender, EventArgs e)

