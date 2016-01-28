@@ -26,6 +26,16 @@ namespace Library
         UPLOAD_PROCESS_INFO,
         KILL_PROCESS,
         UPLOAD_CLIPBOARD_DATA,
-        EXECUTE_CODE
+        EXECUTE_CODE,
+        UPLOAD_SHARES,
+        UPLOAD_LAN_COMPUTERS,
+        UPLOAD_GATEWAYS,
+        UPLOAD_PORTSCAN,
+        SYSCMD_SHUTDOWN,
+        SYSCMD_RESTART,
+        SYSCMD_LOGOFF,
+        SYSCMD_LOCKCOMPUTER,
+        SYSCMD_HIBERNATE,
+        SYSCMD_SLEEP
     }
 }

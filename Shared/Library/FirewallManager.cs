@@ -2,9 +2,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.DirectoryServices;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Text;
 
 namespace Library
@@ -53,6 +55,18 @@ namespace Library
             }
             catch (Exception ex) { }
             return openPorts;
+        }
+
+        public List<ShareInfo> GetShareInfo()
+        {
+            var shareInfo = new List<ShareInfo>();
+            var gns = new GetNetShares();
+            var shares = gns.EnumNetShares("127.0.0.1");
+            foreach (var share in shares)
+            {
+                shareInfo.Add(new ShareInfo() { Name = share.shi1_netname, Remark = share.shi1_remark, Type = share.shi1_type });
+            }
+            return shareInfo;
         }
 
         public List<PortInfo> GetPortInfo()
@@ -129,6 +143,55 @@ namespace Library
             else
                 return null;
         }
+
+        public List<LANComputerInfo> GetLANComputers()
+        {
+            var lanComputers = new List<LANComputerInfo>();
+            DirectoryEntry root = new DirectoryEntry("WinNT:");
+            foreach (DirectoryEntry computers in root.Children)
+            {
+                foreach (DirectoryEntry computer in computers.Children)
+                {
+                    if (computer.Name != "Schema")
+                    {
+                        lanComputers.Add(new LANComputerInfo() { Name = computer.Name });
+                    }
+                }
+            }
+            return lanComputers;
+        }
+
+        public List<GatewayInfo> GetGetwayInfo()
+        {
+            var gateways = new List<GatewayInfo>();
+            NetworkInterface[] adapters = NetworkInterface.GetAllNetworkInterfaces();
+            foreach (NetworkInterface adapter in adapters)
+            {
+                IPInterfaceProperties adapterProperties = adapter.GetIPProperties();
+                GatewayIPAddressInformationCollection addresses = adapterProperties.GatewayAddresses;
+                if (addresses.Count > 0)
+                {
+                    //Console.WriteLine(adapter.Description);
+                    foreach (GatewayIPAddressInformation address in addresses)
+                    {
+                        gateways.Add(new GatewayInfo() { AdapterDescription = adapter.Description, Address = address.Address.ToString() });
+                    }
+                }
+            }
+            return gateways;
+        }
+    }
+
+    public class GatewayInfo
+    {
+        public string AdapterDescription { get; set; }
+        public string Address { get; set; }
+    }
+
+    public class LANComputerInfo
+    {
+
+        public string Name { get; set; }
     }
 
     public class PortInfo
@@ -137,5 +200,14 @@ namespace Library
         public int Port { get; set; }
         public string Name { get; set; }
 
+    }
+
+    public class ShareInfo
+    {
+        public string Name { get; set; }
+
+        public string Remark { get; set; }
+
+        public uint Type { get; set; }
     }
 }

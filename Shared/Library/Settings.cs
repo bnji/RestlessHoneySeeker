@@ -12,27 +12,43 @@ namespace Library
         [DataMember]
         public string ComputerHash { get; set; }
 
-        private ECommand _command = ECommand.DO_NOTHING;
+        private ECommand command = ECommand.DO_NOTHING;
         
         [DataMember]
         public ECommand Command
         {
-            get { return _command; }
+            get { return command; }
             set
             {
                 if (Enum.IsDefined(typeof(ECommand), value))
-                    _command = (ECommand)value;
+                    command = (ECommand)value;
                 else
-                    _command = value;
+                    command = value;
             }
         }
+
+        //private TransmitterStatus status = TransmitterStatus.IDLE;
+
+        //[DataMember]
+        //public TransmitterStatus Status
+        //{
+        //    get { return status; }
+        //    set
+        //    {
+        //        if (Enum.IsDefined(typeof(TransmitterStatus), value))
+        //            status = (TransmitterStatus)value;
+        //        else
+        //            status = value;
+        //    }
+        //}
+
         //public long ImageQuality { get; set; }
         //public string FileName { get; set; }
         //public string FileArgs { get; set; }
         //public string FileToUpload { get; set; }
         //public string FileToDownload { get; set; }
-        [DataMember]
-        public bool HasExectuted { get; set; }
+        //[DataMember]
+        //public bool HasExectuted { get; set; }
 
         [DataMember]
         public string File { get; set; }

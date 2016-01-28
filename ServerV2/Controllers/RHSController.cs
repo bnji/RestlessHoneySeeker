@@ -65,6 +65,7 @@ namespace ServerV2.Controllers
         }
 
         [HttpPost]
+        //[Authorize]
         public HttpResponseMessage SaveSettings(Settings settingsEncoded)
         {
             return Request.GetResponse(RhsApi.SaveSettings(settingsEncoded), responseType);

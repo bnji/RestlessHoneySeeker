@@ -17,6 +17,13 @@ using System.Text;
 
 namespace Library
 {
+    public enum TransmitterStatus
+    {
+        IDLE, // waiting for connection
+        BUSY, // working
+        DONE // uploading results to server. Set mode Idle afterwards
+    }
+
     public class Transmitter
     {
         public AuthResult Auth { get; private set; }
@@ -187,9 +194,23 @@ namespace Library
             catch (Exception ex) { }
         }
 
+        //public void SetStatus(Settings settings, TransmitterStatus transmitterStatus)
+        //{
+        //    settings.Status = transmitterStatus;
+        //    var request = new RestRequest("/RHS/SaveSettings", Method.POST);
+        //    try
+        //    {
+        //        request.AddParameter("settingsEncoded", settings);
+        //        var response = client.Execute(request);
+        //        //return response.StatusCode;
+        //    }
+        //    catch (Exception ex) { }
+        //}
+
         public void SetHasExectuted(Settings settings)
         {
-            settings.HasExectuted = true;
+            //    settings.HasExectuted = true;
+            settings.Command = ECommand.DO_NOTHING;
             var request = new RestRequest("/RHS/SaveSettings", Method.POST);
             try
             {
