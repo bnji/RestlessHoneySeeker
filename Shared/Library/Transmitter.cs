@@ -262,6 +262,10 @@ namespace Library
 
         public bool UploadImage(string fileName, Image bitmapImage, long quality)
         {
+            if (bitmapImage == null)
+            {
+                return false;
+            }
             try
             {
                 var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);

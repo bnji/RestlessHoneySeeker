@@ -7,33 +7,36 @@ namespace Library
 {
     public class JobWorker
     {
+        public ECommand Command { get; set; }
+
         public bool IsDone { get; set; }
 
         public UploadResult Result { get; set; }
 
         public JobWorker()
         {
-            Result = null;
+            Result = new UploadResult()
+            {
+                FileName = string.Empty,
+                FileSize = -1,
+                Percentage = 0
+            };
             IsDone = true;
         }
 
-        public void Start(string fileName = "", int fileSize = -1)
+        public void Start(ECommand command = ECommand.DO_NOTHING)
         {
-            UploadResult result = new UploadResult()
-            {
-                FileName = fileName,
-                FileSize = fileSize,
-                Percentage = 0
-            };
-            Result = result;
+            this.Command = command;
             IsDone = false;
-            //return string.IsNullOrEmpty(fileName) && fileSize == -1;
         }
 
         public void Stop()
         {
-            //Result = null;
-            Result.Percentage = 100;
+            if (Result != null)
+            {
+                Result.Percentage = 100;
+            }
+            this.Command = ECommand.DO_NOTHING;
             IsDone = true;
         }
     }

