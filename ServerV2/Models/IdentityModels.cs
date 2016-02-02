@@ -23,6 +23,7 @@ namespace ServerV2.Models
         public ApplicationDbContext()
             : base("DefaultConnection", throwIfV1Schema: false)
         {
+            base.Database.CreateIfNotExists();
         }
 
         public static ApplicationDbContext Create()

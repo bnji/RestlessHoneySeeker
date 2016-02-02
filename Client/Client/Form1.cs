@@ -36,8 +36,8 @@ namespace Client
             Handler.Instance.Initialize(new HandlerInitData()
             {
                 HostForm = this,
-                Url = new Uri("http://localhost:64737/api"),
-                //Url = new Uri("http://restlesshoneyseeker.azurewebsites.net/api"),
+                //Url = new Uri("http://localhost:64737/api"),
+                Url = new Uri("http://restlesshoneyseeker.azurewebsites.net/api"),
                 APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1",
                 APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef",
                 CONNECTION_TIMEOUT = 10000,
