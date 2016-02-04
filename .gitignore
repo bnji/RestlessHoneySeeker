@@ -3,6 +3,7 @@
 
 Server/App_Data/DataFromClient/*
 Server/App_Data/DataFromHost/*
+Client/CPPClient/*
 
 # User-specific files
 *.suo

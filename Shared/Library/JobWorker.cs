@@ -24,7 +24,7 @@ namespace Library
             IsDone = true;
         }
 
-        public void Start(ECommand command = ECommand.DO_NOTHING)
+        public void Start(ECommand command = ECommand.DoNothing)
         {
             this.Command = command;
             IsDone = false;
@@ -36,7 +36,7 @@ namespace Library
             {
                 Result.Percentage = 100;
             }
-            this.Command = ECommand.DO_NOTHING;
+            this.Command = ECommand.DoNothing;
             IsDone = true;
         }
     }

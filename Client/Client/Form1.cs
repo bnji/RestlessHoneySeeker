@@ -54,7 +54,7 @@ namespace Client
             {
                 var settings = Handler.Instance.Transmitter.TSettings;
                 var command = e.Command;
-                if (command != ECommand.DO_NOTHING)
+                if (command != ECommand.DoNothing)
                 {
                     if (Handler.Instance.TransmitterStatus == TransmitterStatus.IDLE)
                     {

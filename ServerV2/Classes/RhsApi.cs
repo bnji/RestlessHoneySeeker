@@ -32,8 +32,14 @@ namespace ServerV2.Classes
 
         public static string GetFileContents(string path, string file)
         {
+            string result = null;
             var fullName = GetFile(path, file);
-            return System.IO.File.ReadAllText(fullName);
+            try
+            {
+                result = System.IO.File.ReadAllText(fullName);
+            }
+            catch { }
+            return result;
         }
 
         public static string GetFileContents(string fullpath)
@@ -249,13 +255,13 @@ namespace ServerV2.Classes
 
         public static string DownloadFile(string file)
         {
-            byte[] result = null;
             try
             {
-                result = File.ReadAllBytes(GetFile("~/App_Data/DataFromHost/", file));
+                var result = File.ReadAllBytes(GetFile("~/App_Data/DataFromHost/", file));
+                return Convert.ToBase64String(result);
             }
             catch { }
-            return Convert.ToBase64String(result);
+            return null;
         }
 
         public static Settings GetSettings()

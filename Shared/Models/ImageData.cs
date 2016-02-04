@@ -11,7 +11,6 @@ namespace Models
         public string FileName { get; set; }
         public string Image { get; set; }
         public string Token { get; set; }
-
         public string ComputerHash { get; set; }
     }
 }

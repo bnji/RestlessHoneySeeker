@@ -86,7 +86,8 @@ namespace ServerV2.Controllers
         [HttpPost]
         public HttpResponseMessage DownloadFile(Settings settings)
         {
-            return Request.GetResponse<string>(RhsApi.DownloadFile(settings.File), responseType);
+            return Request.GetResponse<string>(RhsApi.DownloadFile(settings.Parameters), responseType);
+            //return Request.GetResponse<string>(RhsApi.DownloadFile(settings.File), responseType);
         }
     }
 }

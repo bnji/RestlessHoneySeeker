@@ -27,7 +27,7 @@ namespace Library
 
         public static byte[] BitmapToJpeg(Image bitmapImage, long quality)
         {
-            quality = quality > 1L && quality < 100L ? quality : 80L;
+            quality = quality >= 10L && quality <= 100L ? quality : 50L;
             var stream = new MemoryStream();
             ImageCodecInfo jgpEncoder = GetEncoder(ImageFormat.Jpeg);
             // Create an Encoder object based on the GUID 

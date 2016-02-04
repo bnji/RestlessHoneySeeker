@@ -12,7 +12,7 @@ namespace Library
         [DataMember]
         public string ComputerHash { get; set; }
 
-        private ECommand command = ECommand.DO_NOTHING;
+        private ECommand command = ECommand.DoNothing;
         
         [DataMember]
         public ECommand Command
@@ -57,17 +57,23 @@ namespace Library
         public string Parameters { get; set; }
 
         [DataMember]
-        public int CursorX { get; set; }
+        public string OutputFile { get; set; }
 
         [DataMember]
-        public int CursorY { get; set; }
+        public bool CanDisplayFileContents { get; set; }
 
-        [DataMember]
-        public string KeyCode { get; set; }
+        //[DataMember]
+        //public int CursorX { get; set; }
+
+        //[DataMember]
+        //public int CursorY { get; set; }
+
+        //[DataMember]
+        //public string KeyCode { get; set; }
 
         public Settings()
         {
-            Command = ECommand.DO_NOTHING;
+            Command = ECommand.DoNothing;
             //ImageQuality = 20L
         }
     }

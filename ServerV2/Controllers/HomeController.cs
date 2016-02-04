@@ -111,6 +111,38 @@ namespace ServerV2.Controllers
             return null;
         }
 
+        [HttpPost]
+        public ActionResult DeleteFile(string computerHash, string filename)
+        {
+            bool isDeleted = false;
+            var file = GetFileFullPath(Path.Combine("~/App_Data/DataFromClient", computerHash), filename);
+            try
+            {
+                if (System.IO.File.Exists(file))
+                {
+                    System.IO.File.Delete(file);
+                }
+            }
+            catch (Exception)
+            {
+                isDeleted = false;
+            }
+            return Json(isDeleted);
+        }
+
+        [HttpGet]
+        public ActionResult GetFilesInDir(string computerHash)
+        {
+            var files = new List<String>();
+            var realPath = Server.MapPath(Path.Combine("~/App_Data/DataFromClient", computerHash));
+            foreach (var file in Directory.GetFiles(realPath))
+            {
+                var fi = new FileInfo(file);
+                files.Add(fi.Name);
+            }
+            return Json(files, JsonRequestBehavior.AllowGet);
+        }
+
         string GetFileContents(string path, string file)
         {
             return System.IO.File.ReadAllText(GetFileFullPath(path, file));

@@ -44,3 +44,4 @@ The software will soon be released as open-source, so anyone who wants to build 
 * http://www.pinvoke.net/default.aspx/user32.sendinput
 * http://support.microsoft.com/kb/304283
 * http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki
+* https://github.com/chrisdone/jquery-console

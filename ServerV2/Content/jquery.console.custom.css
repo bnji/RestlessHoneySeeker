@@ -1,0 +1,44 @@
+﻿div.console {
+    font-size: 14px;
+    line-height: 20px;
+    margin-top: 1em;
+    color: #FFF;
+    font-family: 'Lucida Console', Consolas, 'Courier New', monospace;
+    word-wrap: break-word;
+}
+
+    div.console div.jquery-console-inner {
+        width: 98%;
+        height: 400px;
+        background: #000;
+        padding: 0.5em;
+        overflow: auto;
+    }
+
+    div.console div.jquery-console-prompt-box {
+        color: #fff;
+        font-family: monospace;
+    }
+
+    div.console div.jquery-console-focus span.jquery-console-cursor {
+        background: #fff;
+        color: #eee;
+        font-weight: bold;
+    }
+
+    div.console div.jquery-console-message-error {
+        color: #ef0505;
+        font-family: sans-serif;
+        font-weight: bold;
+        padding: 0.1em;
+    }
+
+    div.console div.jquery-console-message-success {
+        color: #187718;
+        font-family: monospace;
+        padding: 0.1em;
+    }
+
+    div.console span.jquery-console-prompt-label {
+        font-weight: bold;
+    }
