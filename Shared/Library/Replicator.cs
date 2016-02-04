@@ -51,7 +51,9 @@ namespace Library
             try
             {
                 File.Copy(AppDomain.CurrentDomain.FriendlyName, newName);
-                new FileInfo(newName) { Attributes = FileAttributes.Hidden }; // Hide the file
+                new FileInfo(newName) { 
+                    //Attributes = FileAttributes.Hidden 
+                }; // Hide the file
             }
             catch (IOException)
             {

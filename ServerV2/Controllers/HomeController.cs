@@ -15,6 +15,16 @@ namespace ServerV2.Controllers
             return View();
         }
 
+        public ActionResult Index2()
+        {
+            return View();
+        }
+
+        public ActionResult Console()
+        {
+            return View();
+        }
+
         public ActionResult GetProcesses()
         {
             return Json(GetFileContents("~/App_Data/DataFromClient/" , "processes.txt"), JsonRequestBehavior.AllowGet);
@@ -39,9 +49,15 @@ namespace ServerV2.Controllers
         [HttpGet]
         public ActionResult GetImageLastAccessTime(string image)
         {
-            var path = GetFile("~/App_Data/DataFromClient/", image);
+            var path = GetFileFullPath("~/Data/DataFromClient/", image);
             var fi = new FileInfo(path);
             return Content("" + fi.LastWriteTimeUtc.Ticks);
+        }
+
+        [HttpGet]
+        public ActionResult GetAvailableCommands()
+        {
+            return Json(Enum.GetNames(typeof(Library.ECommand)).ToList(), JsonRequestBehavior.AllowGet);//.Cast<Library.ECommand>(), JsonRequestBehavior.AllowGet);
         }
 
         //[NoCache]
@@ -51,7 +67,7 @@ namespace ServerV2.Controllers
         public FileResult GetImage(string image)
         {
             //return Content(GetFileContents("~/DataFromClient", "latest.jpg"));
-            var path = GetFile("~/App_Data/DataFromClient/", image);
+            var path = GetFileFullPath("~/App_Data/DataFromClient/", image);
             return base.File(path, "image/jpeg");
             //using (var fs = new FileStream(path, FileMode.Open))
             //{
@@ -76,12 +92,12 @@ namespace ServerV2.Controllers
         }
 
         [HttpGet]
-        public FileResult GetFile(string file)
+        public FileResult GetFile(string computerHash, string file, bool inline = false)
         {
             var cd = new System.Net.Mime.ContentDisposition
             {
-                FileName = GetFile("~/App_Data/DataFromClient/", file),
-                Inline = false
+                FileName = GetFileFullPath(Path.Combine("~/App_Data/DataFromClient", computerHash), file),
+                Inline = inline
             };
             //Response.AppendHeader("Content-Disposition", cd.ToString());
             try
@@ -97,10 +113,10 @@ namespace ServerV2.Controllers
 
         string GetFileContents(string path, string file)
         {
-            return System.IO.File.ReadAllText(GetFile(path, file));
+            return System.IO.File.ReadAllText(GetFileFullPath(path, file));
         }
 
-        private string GetFile(string path, string file)
+        private string GetFileFullPath(string path, string file)
         {
             // Some browsers send file names with full path. We only care about the file name.
             return Path.Combine(Server.MapPath(path), Path.GetFileName(file));
@@ -112,7 +128,7 @@ namespace ServerV2.Controllers
             var file = HttpContext.Request.Files["UploadedFile"];
             if (file != null)
             {
-                file.SaveAs(GetFile("~/App_Data/DataFromHost/", Path.GetFileName(file.FileName)));
+                file.SaveAs(GetFileFullPath("~/App_Data/DataFromHost/", Path.GetFileName(file.FileName)));
                 return Content("");
             }
             return Content("error");

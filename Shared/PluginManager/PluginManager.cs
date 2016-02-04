@@ -21,7 +21,7 @@ namespace PluginManager
         {
             if (Plugins != null)
             {
-                return Plugins.Where(x => x.Info.AssemblyName == assemblyName).FirstOrDefault();
+                return Plugins.Where(x => x.Info.AssemblyName.Replace(".dll", "").Equals(assemblyName.Replace(".dll", ""))).FirstOrDefault();
             }
             return null;
         }
@@ -35,6 +35,14 @@ namespace PluginManager
                 {
                     plugin.Client.Kill();
                     result = Plugins.Remove(plugin);
+                    //if (plugin.Info.File.Exists)
+                    //{
+                    //    try
+                    //    {
+                    //        Directory.Delete(Path.GetDirectoryName(plugin.Info.File.FullName), true);
+                    //    }
+                    //    catch { }
+                    //}
                 }
                 catch
                 {
@@ -46,15 +54,18 @@ namespace PluginManager
 
         public PluginManager(IPluginHost _host, String _pluginAppPath, String _configFiletype = "*.json")
         {
-            Host = _host;
+            if (_host != null)
+            {
+                Host = _host;
+            }
             PluginAppPath = _pluginAppPath;
             ConfigFiletype = _configFiletype;
-            Plugins = LoadPlugins();
+            LoadPlugins();
         }
 
-        public List<IPlugin> LoadPlugins()
+        public void LoadPlugins()
         {
-            var plugins = new List<IPlugin>();
+            Plugins = new List<IPlugin>();
             foreach (PluginInfo info in GetValidPlugins())
             {
                 try
@@ -65,6 +76,7 @@ namespace PluginManager
                     {
                         if (!typeof(IPlugin).IsAssignableFrom(t))
                             continue;
+
                         //http://stackoverflow.com/questions/19656/how-to-find-an-implementation-of-a-c-sharp-interface-in-the-current-assembly-wit
                         //MessageBox.Show(t.FullName + " implements " + typeof(IPlugin).FullName);
                         {
@@ -83,10 +95,10 @@ namespace PluginManager
                             {
                                 plugin.Host = this.Host;
                                 plugin.Info = info;
-                                Int32 index = plugins.FindIndex((IPlugin p) => p.Info.AssemblyName == plugin.Info.AssemblyName);
+                                Int32 index = Plugins.FindIndex((IPlugin p) => p.Info.AssemblyName == plugin.Info.AssemblyName);
                                 if (index == -1)
                                 {
-                                    plugins.Add(plugin);
+                                    Plugins.Add(plugin);
                                 }
                             }
                         }
@@ -97,7 +109,6 @@ namespace PluginManager
                     Console.WriteLine(ex);
                 }
             }
-            return plugins;
         }
 
         public List<PluginInfo> GetValidPlugins()

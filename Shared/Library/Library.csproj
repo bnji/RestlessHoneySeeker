@@ -98,7 +98,6 @@
     <Compile Include="FirewallManager.cs" />
     <Compile Include="General.cs" />
     <Compile Include="GetNetShares.cs" />
-    <Compile Include="Handler.cs" />
     <Compile Include="HandlerInitData.cs" />
     <Compile Include="HostUnreachableException.cs" />
     <Compile Include="Http.cs" />
@@ -126,6 +125,7 @@
     <Compile Include="Transmitter.cs" />
     <Compile Include="UploadResult.cs" />
     <Compile Include="Watcher.cs" />
+    <Compile Include="WebcamControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

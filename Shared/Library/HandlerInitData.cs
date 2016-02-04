@@ -14,7 +14,7 @@ namespace Library
         public string APIKEY_PUBLIC { get; set; }
         public int CONNECTION_TIMEOUT { get; set; }
         public int CONNECTION_INTERVAL { get; set; }
-        public bool startNewProcessOnExit { get; set; }
+        public bool StartNewProcessOnExit { get; set; }
 
         public bool HideOnStart { get; set; }
     }

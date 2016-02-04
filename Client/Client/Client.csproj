@@ -212,11 +212,15 @@
     <None Include="Resources\windows_update_icon_2.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ClientHandler\ClientHandler.csproj">
+      <Project>{7983a86b-6aa8-4544-a217-fa759f38bf04}</Project>
+      <Name>ClientHandler</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Shared\Library\Library.csproj">
       <Project>{5ceb4f65-2030-4a8e-9503-213b6ded119c}</Project>
       <Name>Library</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\shared\Models\Models.csproj">
+    <ProjectReference Include="..\..\Shared\Models\Models.csproj">
       <Project>{e868683c-14a8-46f0-bc00-0c6c03832ab6}</Project>
       <Name>Models</Name>
     </ProjectReference>

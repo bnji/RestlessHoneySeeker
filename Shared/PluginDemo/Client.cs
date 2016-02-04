@@ -17,7 +17,9 @@ namespace PluginDemo
     {
         public object Execute(string parameters)
         {
-            return GetWebCamImage();
+            MessageBox.Show("Plugin execution works!");
+            return null;
+            //return GetWebCamImage();
         }
 
         public void Initialize()
@@ -53,6 +55,7 @@ namespace PluginDemo
 
         public void Kill()
         {
+            //MessageBox.Show("Plugin kill method not implemented!");
             // do something if needed on exit
         }
     }
