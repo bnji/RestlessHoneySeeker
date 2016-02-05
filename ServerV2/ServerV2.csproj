@@ -230,6 +230,7 @@
     <Content Include="App_Data\DataFromHost\index.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Content\main.css" />
     <Content Include="Content\jquery.console.custom.css" />
     <Content Include="Content\jquery.console.js" />
     <Content Include="favicon.ico" />

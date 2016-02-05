@@ -61,11 +61,11 @@ namespace ServerV2.Classes
         public static AuthResult Authorize(AuthData data)
         {
             Keys keys = GetKeys();
-            if (keys != null && keys.Public.Equals(data.PublicKey))
+            if (data != null && keys != null && keys.Public.Equals(data.PublicKey))
             {
                 var privateKey = keys.Private;
                 var hashCheck = General.Sha1Hash(data.Data + privateKey + data.PublicKey);
-                if (hashCheck.Equals(data.Hash))
+                if (hashCheck != null && hashCheck.Equals(data.Hash))
                 {
                     var newToken = General.Sha1Hash(privateKey + hashCheck + GetDateTimeFormatted());
                     var computersJsonFile = GetFile("~/App_Data/", "computers.json");
@@ -75,26 +75,23 @@ namespace ServerV2.Classes
                         computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
                     }
                     catch { }
-
-                    var computerData = new ComputerData()
+                    var computerData = GetComputerData(data);
+                    var computer = computers.Where(c => c.Hash == computerData.Hash).FirstOrDefault();
+                    if (computer == null)
                     {
-                        Name = data.HostName,
-                        IpExternal = data.IpExternal,
-                        IpInternal = data.IpInternal,
-                        LastActive = DateTime.Now,
-                        FileUploaded = null,
-                        BytesUploaded = 0,
-                        Hash = null
-                    };
-                    computerData.Hash = Transmitter.GetComputerHash(computerData);
-                    if (computers.Where(c => c.Hash == computerData.Hash).FirstOrDefault() == null)
-                    {
+                        computerData.IsOnline = true;
                         computers.Add(computerData);
                     }
-
+                    else
+                    {
+                        computer.IsOnline = true;
+                    }
                     var computersJson = JsonConvert.SerializeObject(computers);
-                    File.WriteAllText(computersJsonFile, computersJson);
-
+                    try
+                    {
+                        File.WriteAllText(computersJsonFile, computersJson);
+                    }
+                    catch { }
                     return new AuthResult()
                     {
                         Token = newToken,
@@ -108,11 +105,11 @@ namespace ServerV2.Classes
         public static bool DeAuthorize(AuthData data)
         {
             Keys keys = GetKeys();
-            if (keys != null && keys.Public.Equals(data.PublicKey))
+            if (data != null && keys != null && keys.Public.Equals(data.PublicKey))
             {
                 var privateKey = keys.Private;
                 var hashCheck = General.Sha1Hash(data.Data + privateKey + data.PublicKey);
-                if (hashCheck.Equals(data.Hash))
+                if (hashCheck != null && hashCheck.Equals(data.Hash))
                 {
                     var computersJsonFile = GetFile("~/App_Data/", "computers.json");
                     var computers = new List<ComputerData>();
@@ -121,24 +118,19 @@ namespace ServerV2.Classes
                         computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
                     }
                     catch { }
-                    var computerData = new ComputerData()
-                    {
-                        Name = data.HostName,
-                        IpExternal = data.IpExternal,
-                        IpInternal = data.IpInternal,
-                        LastActive = DateTime.Now,
-                        FileUploaded = null,
-                        BytesUploaded = 0,
-                        Hash = null
-                    };
-                    computerData.Hash = Transmitter.GetComputerHash(computerData);
+                    var computerData = GetComputerData(data);
                     var computer = computers.Find(x => x.Hash == computerData.Hash);
                     if (computer != null)
                     {
-                        computers.RemoveAt(computers.IndexOf(computer));
+                        computer.IsOnline = false;
+                        //computers.RemoveAt(computers.IndexOf(computer));
                         var computersJson = JsonConvert.SerializeObject(computers);
                         System.Threading.Thread.Sleep(250);
-                        File.WriteAllText(computersJsonFile, computersJson);
+                        try
+                        {
+                            File.WriteAllText(computersJsonFile, computersJson);
+                        }
+                        catch { }
                     }
                     return true;
                 }
@@ -146,24 +138,38 @@ namespace ServerV2.Classes
             return false;
         }
 
+        private static ComputerData GetComputerData(AuthData data)
+        {
+            ComputerData computerData = null;
+            if (data != null)
+            {
+                computerData = new ComputerData()
+                {
+                    Name = data.HostName,
+                    IpExternal = data.IpExternal,
+                    IpInternal = data.IpInternal,
+                    LastActive = DateTime.Now,
+                    FileUploaded = null,
+                    BytesUploaded = 0,
+                    Hash = null,
+                    IsOnline = false
+                };
+                // hash value needs to be calculated after constructor
+                computerData.Hash = Transmitter.GetComputerHash(computerData);
+            }
+            return computerData;
+        }
 
         public static bool UpdateLastActive(AuthData data)
         {
             Keys keys = GetKeys();
-            if (keys != null && keys.Public.Equals(data.PublicKey))
+            if (data != null && keys != null && keys.Public.Equals(data.PublicKey))
             {
                 var privateKey = keys.Private;
                 var hashCheck = General.Sha1Hash(data.Data + privateKey + data.PublicKey);
                 if (hashCheck.Equals(data.Hash))
                 {
                     //var newToken = General.Sha1Hash(privateKey + hashCheck + GetDateTimeFormatted());
-                    var computersJsonFile = GetFile("~/App_Data/", "computers.json");
-                    var computers = new List<ComputerData>();
-                    try
-                    {
-                        computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
-                    }
-                    catch { }
                     var computerData = new ComputerData()
                     {
                         Name = data.HostName,
@@ -175,18 +181,37 @@ namespace ServerV2.Classes
                         Hash = null
                     };
                     computerData.Hash = Transmitter.GetComputerHash(computerData);
-                    var computer = computers.Find(c => c.Hash == computerData.Hash);
-                    if(computer != null) 
-                    {
-                        computer.LastActive = DateTime.Now;
-                    }
-                    var computersJson = JsonConvert.SerializeObject(computers);
-                    System.Threading.Thread.Sleep(250);
-                    File.WriteAllText(computersJsonFile, computersJson);
-                    return true;
+                    return UpdateLastActive(computerData.Hash);
+                }
+            }
+            else
+            {
+                if (data != null && !string.IsNullOrEmpty(data.Hash))
+                {
+                    return UpdateLastActive(data.Hash);
                 }
             }
             return false;
+        }
+
+        public static bool UpdateLastActive(string computerHash)
+        {
+            var computersJsonFile = GetFile("~/App_Data/", "computers.json");
+            var computers = new List<ComputerData>();
+            try
+            {
+                computers = JsonConvert.DeserializeObject<List<ComputerData>>(GetFileContents(computersJsonFile));
+            }
+            catch { }
+            var computer = computers.Find(c => c.Hash == computerHash);
+            if (computer != null)
+            {
+                computer.LastActive = DateTime.Now;
+            }
+            var computersJson = JsonConvert.SerializeObject(computers);
+            System.Threading.Thread.Sleep(250);
+            File.WriteAllText(computersJsonFile, computersJson);
+            return true;
         }
 
         // php time()

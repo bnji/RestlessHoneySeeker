@@ -120,17 +120,17 @@ namespace Library
             catch { }
         }
 
-        public void UpdateLastActive()
-        {
-            try
-            {
-                var authData = GetAuthData();
-                var request = new RestRequest("/RHS/UpdateLastActive/{data}", Method.POST);
-                request.AddObject(authData);
-                var response = client.Execute(request);
-            }
-            catch { }
-        }
+        //public void UpdateLastActive()
+        //{
+        //    try
+        //    {
+        //        var authData = GetAuthData();
+        //        var request = new RestRequest("/RHS/UpdateLastActive/{data}", Method.POST);
+        //        request.AddObject(authData);
+        //        var response = client.Execute(request);
+        //    }
+        //    catch { }
+        //}
 
         AuthData GetAuthData()
         {
@@ -138,7 +138,7 @@ namespace Library
             if (externalIpAddress != IPAddress.Loopback)
             {
                 string hash = GetHashKey();
-                var hostName = System.Net.Dns.GetHostName(); ;
+                var hostName = System.Net.Dns.GetHostName();
                 var ipInternal = Convert.ToString(Net.GetInternalIpAddress());
                 var ipExternal = Convert.ToString(externalIpAddress);
                 return new AuthData()
@@ -209,15 +209,22 @@ namespace Library
 
         public void SetHasExectuted(Settings settings)
         {
-            settings.ComputerHash = null;
-            settings.Command = ECommand.DoNothing;
-            var request = new RestRequest("/RHS/SaveSettings/{settingsEncoded}", Method.POST);
             try
             {
-                request.ReadWriteTimeout = 30000;
-                request.Timeout = 30000;
-                request.AddObject(settings);
-                var response = client.Execute(request);
+                var request1 = new RestRequest("/RHS/UpdateLastActive/{data}", Method.POST);
+                request1.AddObject(new AuthData() { Hash = settings.ComputerHash });
+                var respsone1 = client.Execute(request1);
+            }
+            catch { }
+            settings.ComputerHash = null;
+            settings.Command = ECommand.DoNothing;
+            var request2 = new RestRequest("/RHS/SaveSettings/{settingsEncoded}", Method.POST);
+            try
+            {
+                request2.ReadWriteTimeout = 30000;
+                request2.Timeout = 30000;
+                request2.AddObject(settings);
+                var response2 = client.Execute(request2);
             }
             catch (Exception ex) { }
         }
@@ -241,7 +248,6 @@ namespace Library
             string content = String.Empty;
             try
             {
-                
                 //var image = objData as Bitmap;
                 //if (image != null)
                 //{
@@ -276,29 +282,29 @@ namespace Library
             return content;
         }
 
-        public bool UploadImage(string fileName, Image bitmapImage, long quality)
-        {
-            if (bitmapImage == null)
-            {
-                return false;
-            }
-            try
-            {
-                var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
-                var request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
-                request.AddObject(new ImageData()
-                {
-                    FileName = fileName,
-                    Image = Convert.ToBase64String(imgArray),
-                    Token = Auth.Token,
-                    ComputerHash = TSettings.ComputerHash
-                });
-                var response = client.Execute(request);
-                return response.Content != null && response.Content.Length > 0;
-            }
-            catch { }
-            return false;
-        }
+        //public bool UploadImage(string fileName, Image bitmapImage, long quality)
+        //{
+        //    if (bitmapImage == null)
+        //    {
+        //        return false;
+        //    }
+        //    try
+        //    {
+        //        var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
+        //        var request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
+        //        request.AddObject(new ImageData()
+        //        {
+        //            FileName = fileName,
+        //            Image = Convert.ToBase64String(imgArray),
+        //            Token = Auth.Token,
+        //            ComputerHash = TSettings.ComputerHash
+        //        });
+        //        var response = client.Execute(request);
+        //        return response.Content != null && response.Content.Length > 0;
+        //    }
+        //    catch { }
+        //    return false;
+        //}
 
         //public bool RegisterWithServer()
         //{

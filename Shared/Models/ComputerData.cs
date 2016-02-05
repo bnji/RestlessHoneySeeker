@@ -14,5 +14,6 @@ namespace Models
         public string FileUploaded { get; set; }
         public int BytesUploaded { get; set; }
         public string Hash { get; set; }
+        public bool IsOnline { get; set; }
     }
 }
