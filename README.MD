@@ -1,4 +1,4 @@
-### PROJECT INFORMATION ###
+# PROJECT INFORMATION #
 
 ## About ##
 
@@ -12,12 +12,12 @@ The purpose of this software is to show how easy it is in reality for anyone to 
 
 The software has now been released as open-source. Anyone who wants to build upon this is welcome to do so. 
 
-Some 3rd party libraries have been used, such as 
+## Videos (demo) ##
+**Restless Honey Seeker 2016.2.4**
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/QeAcLpp2t5Y/0.jpg)](http://www.youtube.com/watch?v=QeAcLpp2t5Y)
 
-* SharpZipLib
-* JSON.NET
-* http://www.codeproject.com/Articles/125478/Versatile-WebCam-C-library
-* SQLite
+**C# Restless RAT (Remote Access Tool using RESTful services)**
+[![IMAGE ALT TEXT HERE](http://img.youtube.com/vi/K1roV3RT0Ak/0.jpg)](http://www.youtube.com/watch?v=K1roV3RT0Ak)
 
 Note: This software is not intended for causing any harm to anything or anyone. I - the author of this software - is not responsible for any usage whatsoever.
 
@@ -45,3 +45,12 @@ The software will soon be released as open-source, so anyone who wants to build 
 * http://support.microsoft.com/kb/304283
 * http://system.data.sqlite.org/index.html/doc/trunk/www/downloads.wiki
 * https://github.com/chrisdone/jquery-console
+
+##3rd party libraries##
+* SharpZipLib
+* Json.NET (http://www.newtonsoft.com/json)
+* WebCameraControl (http://www.codeproject.com/Articles/125478/Versatile-WebCam-C-library)
+* SQLite (https://system.data.sqlite.org/index.html/doc/trunk/www/index.wiki)
+* ILMerg (http://research.microsoft.com/en-us/people/mbarnett/ILMerge.aspx)
+* RestSharp (http://restsharp.org)
+* DotNetZip (https://github.com/haf/DotNetZip.Semverd)
