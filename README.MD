@@ -23,7 +23,37 @@ The purpose of this software is to show how easy it is for anyone with a bit of 
 
 **NOTE:** 'Clever' antivirus & -malware programs and/or firewalls should detect RHS or its HTTP requests (and hence block it or notice the user to take an action), but I've noticed most of them actually allow RHS continue running in the background uninterrupted making HTTP requests waiting for a command from the server. One reason might be (is), that on most (commercial) computers, outgoing traffic isn't filtered or monitored as strictly as ingoing traffic. RHS uses port 80 to "phone home" to a C&C (Command-and-Control) server, which controls the "infected" computer (client) or computers (clients).
 
-
+## Features ##
+* Spy Functions
+	* Capture Webcam
+	* Capture Desktop
+	* Keylogger
+	* Capture Chrome (browser) Data
+	* Capture Clipboard Data (text or image)
+	* Capture File Events
+	* Capture Processes & Kill Process
+	* Stream Desktop (buggy)
+* Network Functions
+	* Active Ports
+	* Network Shares
+	* LAN Computers
+	* Network Gateways
+	* Port Scanner
+* System Functions
+	* Shutdown
+	* Restart
+	* Logoff
+	* Lock
+	* Hibernate
+	* Sleep
+	* Execute (run) a program (command)
+* Misc
+	* Download / Get File (from client)
+	* Upload & Execute File
+	* Upload, Remove & Execute Plugin
+	* Execute C#/VB.NET code
+	* Speech
+	* Set transmission interval (how often the client communicates with the server)
 
 ## Videos (demo) ##
 **Restless Honey Seeker 2016.2.4**
