@@ -23,6 +23,17 @@ The purpose of this software is to show how easy it is for anyone with a bit of 
 
 **NOTE:** 'Clever' antivirus & -malware programs and/or firewalls should detect RHS or its HTTP requests (and hence block it or notice the user to take an action), but I've noticed most of them actually allow RHS continue running in the background uninterrupted making HTTP requests waiting for a command from the server. One reason might be (is), that on most (commercial) computers, outgoing traffic isn't filtered or monitored as strictly as ingoing traffic. RHS uses port 80 to "phone home" to a C&C (Command-and-Control) server, which controls the "infected" computer (client) or computers (clients).
 
+### AV / Firewall's tested ###
+System: **Windows 7 Home Premium 64-bit EN (6.1, Build 7601)**
+
+Product | Version | Blocked RHS | Notes
+--------- | --------- | -------- | ------
+Bitdefender Antivirus Free Edition | 1.0.21.1099 | NO | 
+AVG AntiVirus FREE | 16.41.7442 | NO |
+ZoneAlarm Free Antivirus + Firewall | 14.1.011.000 | NO |
+BullGuard Internet Security | 15.02.2016 | (YES) | Required user to click “Allow Access”
+COMODO Internet Security Premium | 8.2.0.4792 | NO |
+
 ## Features ##
 * Spy Functions
 	* Capture Webcam
