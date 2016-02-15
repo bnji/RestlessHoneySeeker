@@ -338,7 +338,7 @@
 
     function getComputerDescription(computer) {
         if (computer) {
-            return computer['Name'] + ", " + (computer['IsOnline'] ? "ONLINE" : "OFFLINE") + ", IP ext.: " + computer['IpExternal'] + ", IP int.: " + computer['IpInternal'] + ", Hash: " + computer['Hash'];
+            return computer['Name'] + ", " + (computer['IsOnline'] ? "ONLINE" : "OFFLINE") + ", Hash: " + computer['Hash'] + ", IP ext.: " + computer['IpExternal'] + ", IP int.: " + computer['IpInternal'];
         }
         return "No computer selected";
     }

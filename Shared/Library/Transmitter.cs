@@ -282,30 +282,6 @@ namespace Library
             return content;
         }
 
-        //public bool UploadImage(string fileName, Image bitmapImage, long quality)
-        //{
-        //    if (bitmapImage == null)
-        //    {
-        //        return false;
-        //    }
-        //    try
-        //    {
-        //        var imgArray = Imaging.BitmapToJpeg(bitmapImage, quality);
-        //        var request = new RestRequest("/RHS/UploadImage/{data}", Method.POST);
-        //        request.AddObject(new ImageData()
-        //        {
-        //            FileName = fileName,
-        //            Image = Convert.ToBase64String(imgArray),
-        //            Token = Auth.Token,
-        //            ComputerHash = TSettings.ComputerHash
-        //        });
-        //        var response = client.Execute(request);
-        //        return response.Content != null && response.Content.Length > 0;
-        //    }
-        //    catch { }
-        //    return false;
-        //}
-
         //public bool RegisterWithServer()
         //{
         //    try

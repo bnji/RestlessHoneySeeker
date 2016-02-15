@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Windows.Forms;
-using System.IO;
 using Library;
 using Client.Properties;
 using System.Security.Principal;
 using ClientHandler;
 using PluginManager;
+using System.Reflection;
 
 namespace Client
 {
@@ -48,7 +48,8 @@ namespace Client
                 CONNECTION_TIMEOUT = 10000,
                 CONNECTION_INTERVAL = 10000,
                 StartNewProcessOnExit = false,
-                HideOnStart = false
+                HideOnStart = false,
+                Assembly = Assembly.GetExecutingAssembly()
             });
             Handler.Instance.OnCommandEvent += (o, e) =>
             {

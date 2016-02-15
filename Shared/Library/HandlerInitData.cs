@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Forms;
 
@@ -15,7 +16,7 @@ namespace Library
         public int CONNECTION_TIMEOUT { get; set; }
         public int CONNECTION_INTERVAL { get; set; }
         public bool StartNewProcessOnExit { get; set; }
-
+        public Assembly Assembly { get; set; }
         public bool HideOnStart { get; set; }
     }
 }

