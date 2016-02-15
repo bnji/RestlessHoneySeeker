@@ -28,6 +28,7 @@ System: **Windows 7 Home Premium 64-bit EN (6.1, Build 7601)**
 
 Product | Version | Blocked RHS | Notes
 --------- | --------- | -------- | ------
+Avast Free Antivirus | 11.1.2253 | NO | 
 Bitdefender Antivirus Free Edition | 1.0.21.1099 | NO | 
 AVG AntiVirus FREE | 16.41.7442 | NO |
 ZoneAlarm Free Antivirus + Firewall | 14.1.011.000 | NO |
