@@ -605,11 +605,12 @@ namespace ClientHandler
 
         public void UploadPortInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            var piList = FirewallManager.Instance.GetPortInfo();
-            piList.ForEach((PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
-            StartWork(true);
-            UploadResult(sb.ToString(), "ports.txt");
+            throw new NotImplementedException();
+            //StringBuilder sb = new StringBuilder();
+            //var piList = FirewallManager.Instance.GetPortInfo();
+            //piList.ForEach((PortInfo pi) => sb.AppendLine(pi.IP + ":" + pi.Port + " - " + pi.Name));
+            //StartWork(true);
+            //UploadResult(sb.ToString(), "ports.txt");
         }
 
         public void UploadProcessInfo()
@@ -892,29 +893,32 @@ namespace Client
 
         public void UploadShares()
         {
-            StringBuilder sb = new StringBuilder();
-            var piList = FirewallManager.Instance.GetShareInfo();
-            piList.ForEach((Library.ShareInfo si) => sb.AppendLine("Name: " + si.Name + ", Remark: " + si.Remark + ", Type: " + si.Type));
-            StartWork(true);
-            UploadResult(sb.ToString(), "shares.txt");
+            throw new NotImplementedException();
+            //StringBuilder sb = new StringBuilder();
+            //var piList = FirewallManager.Instance.GetShareInfo();
+            //piList.ForEach((Library.ShareInfo si) => sb.AppendLine("Name: " + si.Name + ", Remark: " + si.Remark + ", Type: " + si.Type));
+            //StartWork(true);
+            //UploadResult(sb.ToString(), "shares.txt");
         }
 
         public void UploadLANComputers()
         {
-            StringBuilder sb = new StringBuilder();
-            var piList = FirewallManager.Instance.GetLANComputers();
-            piList.ForEach((Library.LANComputerInfo lci) => sb.AppendLine("Name: " + lci.Name));
-            StartWork(true);
-            UploadResult(sb.ToString(), "lancomputers.txt");
+            throw new NotImplementedException();
+            //StringBuilder sb = new StringBuilder();
+            //var piList = FirewallManager.Instance.GetLANComputers();
+            //piList.ForEach((Library.LANComputerInfo lci) => sb.AppendLine("Name: " + lci.Name));
+            //StartWork(true);
+            //UploadResult(sb.ToString(), "lancomputers.txt");
         }
 
         public void UploadGatewayInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            var piList = FirewallManager.Instance.GetGetwayInfo();
-            piList.ForEach((Library.GatewayInfo i) => sb.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
-            StartWork(true);
-            UploadResult(sb.ToString(), "gateways.txt");
+            throw new NotImplementedException();
+            //StringBuilder sb = new StringBuilder();
+            //var piList = FirewallManager.Instance.GetGetwayInfo();
+            //piList.ForEach((Library.GatewayInfo i) => sb.AppendLine("Adapter description: " + i.AdapterDescription + ", Address: " + i.Address));
+            //StartWork(true);
+            //UploadResult(sb.ToString(), "gateways.txt");
         }
 
         public void UploadPortscan()
