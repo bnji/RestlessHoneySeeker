@@ -135,6 +135,11 @@ namespace ServerV2.Controllers
         {
             var files = new List<String>();
             var realPath = Server.MapPath(Path.Combine("~/App_Data/DataFromClient", computerHash));
+            if (!Directory.Exists(realPath))
+            {
+                return Json(files, JsonRequestBehavior.AllowGet);
+            }
+
             foreach (var file in Directory.GetFiles(realPath))
             {
                 var fi = new FileInfo(file);
